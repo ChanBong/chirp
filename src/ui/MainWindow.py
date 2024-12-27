@@ -1,32 +1,65 @@
-from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, 
-                            QPushButton, QLabel, QMenuBar, QTabWidget)
-from PyQt6.QtCore import Qt
+import os
+import sys
 from PyQt6.QtGui import QFont
-from .GeneralTab import GeneralTab
-from .apps.SlackTab import SlackTab
+from PyQt6.QtWidgets import QPushButton, QHBoxLayout
+from PyQt6.QtCore import pyqtSignal
 
-class MainWindow(QMainWindow):
+from ui.BaseWindow import BaseWindow
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+
+class MainWindow(BaseWindow):
+    open_settings = pyqtSignal()
+    start_listening = pyqtSignal()
+    close_app = pyqtSignal()
+
     def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Chirp")
-        self.setGeometry(1175, 25, 400, 200) # x, y, width, height
+        """
+        Initialize the main window.
+        """
+        super().__init__('Chirp', 320, 180)
+        self.initMainUI()
 
-        # Create central widget and main layout
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        main_layout = QVBoxLayout(central_widget)
-        
-        # Create tab widget
-        self.tab_widget = QTabWidget()
-        main_layout.addWidget(self.tab_widget)
-        
-        # Initialize tabs with their respective classes
-        self.general_tab = GeneralTab()
-        self.slack_tab = SlackTab()
-        
-        # Add the tabs to the tab widget
-        self.tab_widget.addTab(self.general_tab, "General")
-        self.tab_widget.addTab(self.slack_tab, "Apps")
+    def initMainUI(self):
+        """
+        Initialize the main user interface.
+        """
+        start_btn = QPushButton('Start')
+        start_btn.setFont(QFont('Segoe UI', 10))
+        start_btn.setFixedSize(120, 60)
+        start_btn.clicked.connect(self.start_pressed)
 
-    def button_clicked(self):
-        print("Button was clicked!") 
+        settings_btn = QPushButton('Settings')
+        settings_btn.setFont(QFont('Segoe UI', 10))
+        settings_btn.setFixedSize(120, 60)
+        settings_btn.clicked.connect(self.open_settings.emit)
+
+        button_layout = QHBoxLayout()
+        button_layout.addStretch(1)
+        button_layout.addWidget(start_btn)
+        button_layout.addWidget(settings_btn)
+        button_layout.addStretch(1)
+
+        self.main_layout.addStretch(1)
+        self.main_layout.addLayout(button_layout)
+        self.main_layout.addStretch(1)
+
+    def closeEvent(self, event):
+        """
+        Close the application when the main window is closed.
+        """
+        self.close_app.emit()
+        event.ignore()
+
+    def start_pressed(self):
+        """
+        Emit the start_listening signal when the start button is pressed.
+        """
+        self.start_listening.emit()
+
+    def hide_main_window(self):
+        """
+        Hide the main window.
+        """
+        self.hide()
