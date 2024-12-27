@@ -1,0 +1,193 @@
+global_options:
+  active_apps:
+    value: [Vanilla]
+    type: list
+    description: The apps that are currently active.
+  start_on_startup:
+    value: false
+    type: bool
+    description: Whether to automatically start the application when system boots.
+  start_minimized:
+    value: false
+    type: bool
+    description: Whether to start the application minimized.
+  print_to_terminal:
+    value: true
+    type: bool
+    description: Whether to print debug information to the terminal.
+  save_debug_audio:
+    value: false
+    type: bool
+    description: Whether to save audio files for debugging purposes.
+
+apps:
+  - name:
+      value: Vanilla
+      type: str
+      description: The name of the app.
+    activation_key:
+      value: ctrl+shift+alt+space
+      type: str
+      description: The shortcut to launch the app.
+    sound_device:
+      value: null
+      type: "int or null"
+      description: "The numeric index of the sound device to use for recording. Run `python list_audio_devices.py` to to find device numbers."
+    gain:
+      value: 1.0
+      type: float
+      description: "Amplification factor for the recorded audio. Values greater than 1.0 increase volume, less than 1.0 decrease it. Use cautiously as high values may cause clipping. Default is 1.0 (no change)"
+    transcription_backend:
+      value: faster_whisper
+      type: str
+      description: "The backend to use for transcription. Options: faster_whisper, openai, vosk"
+      options:
+        - faster_whisper
+        - openai
+        - vosk
+    writing_key_press_delay:
+      value: 0.005
+      type: float
+      description: "The delay in seconds between each key press when writing the transcribed text. Too short of a delay can affect typing of shifted characters (e.g. capital letters, ?, !, etc.) in uinput mode."
+    SYSTEM_PROMPT:
+      value: null
+      type: str
+      description: "The system prompt to use for the app."
+    USER_PROMPT:
+      value: null
+      type: str
+      description: "The user prompt to use for the app."
+
+
+transcription_backends:
+  faster_whisper:
+    model:
+      value: base
+      type: str
+      description: "The model to use for transcription. The larger models provide better accuracy but are slower."
+      options:
+        - tiny
+        - tiny.en
+        - base
+        - base.en
+        - small
+        - small.en
+        - medium
+        - medium.en
+        - large
+        - large-v1
+        - large-v2
+        - large-v3
+    compute_type:
+      value: default
+      type: str
+      description: "The compute type to use for the local Whisper model."
+      options:
+        - default
+        - float32
+        - float16
+        - int8
+    device:
+      value: auto
+      type: str
+      description: "The device to run the local Whisper model on. Use 'cuda' for NVIDIA GPUs, 'cpu' for CPU-only processing, or 'auto' to let the system automatically choose the best available device."
+      options:
+        - auto
+        - cuda
+        - cpu
+    condition_on_previous_text:
+      value: true
+      type: bool
+      description: "Set to true to use the previously transcribed text as a prompt for the next transcription request."
+    temperature:
+      value: 0.0
+      type: float
+      description: "Controls the randomness of the transcription output. Lower values make the output more focused and deterministic."
+    initial_prompt:
+      value: null
+      type: str
+      description: "A string used as an initial prompt to condition the transcription."
+  openai:
+    model:
+      value: whisper-1
+      type: str
+      description: "The model to use for transcription. Currently only 'whisper-1' is available."
+      options:
+        - whisper-1
+    base_url:
+      value: https://api.openai.com/v1
+      type: str
+      description: "The base URL for the API. Can be changed to use a local API endpoint."
+    api_key:
+      value: null
+      type: str
+      description: "Your API key for the OpenAI API. Required for API usage."
+    temperature:
+      value: 0.0
+      type: float
+      description: "Controls the randomness of the transcription output. Lower values make the output more focused and deterministic."
+    initial_prompt:
+      value: null
+      type: str
+      description: "A string used as an initial prompt to condition the transcription."
+  vosk:
+    model_path:
+      value: "./model"
+      type: dir_path
+      description: "Path to the folder containing the Vosk model files. Default is 'model' in the current directory."
+    sample_rate:
+      value: 16000
+      type: int
+      description: "Sample rate of the audio input. Vosk models are typically trained on 16kHz audio."
+      options:
+        - 8000
+        - 16000
+        - 22050
+        - 44100
+        - 48000
+    use_streaming:
+      value: false
+      type: bool
+      description: "If true, use streaming mode with partial results. If false, wait for complete audio before transcribing."
+
+
+llm_backends:
+  open_ai:
+    api_key:
+      value: null
+      type: str
+      description: "Your API key for the OpenAI API. Required for API usage."
+    model:
+      value: gpt-4o
+      type: str
+      description: "The model to use for LLM processing."
+      options:
+        - gpt-4o
+        - gpt-4o-mini
+        - o1-mini
+    temperature:
+      value: 0.0
+      type: float
+      description: "Controls the randomness of the LLM output. Lower values make the output more focused and deterministic."
+  ollama:
+    model:
+      value: llama3.1
+      type: str
+      description: "The model to use for LLM processing."
+      options:
+        - llama3.1
+        - llama3.1-uncensored
+        - gemma2
+        - llama3
+        - llama3.1-8b
+        - llama3.1-70b
+        - llama3.1-8b-instruct
+        - llama3.1-70b-instruct
+    temperature:
+      value: 0.0
+      type: float
+      description: "Controls the randomness of the LLM output. Lower values make the output more focused and deterministic."
+    ModelFile:
+      value: null
+      type: str
+      description: "Path to the model file. Leave empty to use online models."
