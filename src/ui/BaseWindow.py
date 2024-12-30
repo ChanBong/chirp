@@ -4,16 +4,16 @@ from PyQt6.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayo
 
 
 class BaseWindow(QMainWindow):
-    def __init__(self, title, width, height):
+    def __init__(self, title, width, height, show_title=True):
         """
         Initialize the base window.
         """
         super().__init__()
-        self.initUI(title, width, height)
+        self.initUI(title, width, height, show_title)
         self.setWindowPosition()
         self.is_dragging = False
 
-    def initUI(self, title, width, height):
+    def initUI(self, title, width, height, show_title):
         """
         Initialize the user interface.
         """
@@ -26,16 +26,21 @@ class BaseWindow(QMainWindow):
         self.main_layout = QVBoxLayout(self.main_widget)
         self.main_layout.setContentsMargins(10, 10, 10, 10)
 
-        # Create a widget for the title bar
-        title_bar = QWidget()
-        title_bar_layout = QHBoxLayout(title_bar)
-        title_bar_layout.setContentsMargins(0, 0, 0, 0)
-
-        # Add the title label
-        title_label = QLabel('Chirp')
-        title_label.setFont(QFont('Segoe UI', 12))
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title_label.setStyleSheet("color: #404040;")
+        title_bar_layout = None
+        if show_title:
+            # Create a widget for the title bar
+            title_bar = QWidget()
+            title_bar_layout = QHBoxLayout(title_bar)
+            title_bar_layout.setContentsMargins(0, 0, 0, 0)
+            # Add the title label
+            title_label = QLabel('Chirp 🐤')
+            title_label.setFont(QFont('Segoe UI', 12))
+            title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            title_label.setStyleSheet("color: #404040;")
+            title_bar_layout.addWidget(QWidget(), 1)  # Left spacer
+            title_bar_layout.addWidget(title_label, 3)  # Title (with more width)
+        # else:
+            # title_bar_layout.addWidget(QWidget(), 4)  # Full-width spacer when no title
 
         # Create a widget for the close button
         close_button_widget = QWidget()
@@ -59,11 +64,10 @@ class BaseWindow(QMainWindow):
         close_button_layout.addWidget(close_button, alignment=Qt.AlignmentFlag.AlignRight)
 
         # Add widgets to the title bar layout
-        title_bar_layout.addWidget(QWidget(), 1)  # Left spacer
-        title_bar_layout.addWidget(title_label, 3)  # Title (with more width)
-        title_bar_layout.addWidget(close_button_widget, 1)  # Close button
+        if show_title:
+            title_bar_layout.addWidget(close_button_widget, 1)  # Close button
+            self.main_layout.addWidget(title_bar)
 
-        self.main_layout.addWidget(title_bar)
         self.setCentralWidget(self.main_widget)
 
     def setWindowPosition(self):
@@ -75,7 +79,7 @@ class BaseWindow(QMainWindow):
         
         # Calculate position at 1/2 screen width and 3/4 screen height
         x = (screen_geometry.width() - frame_geometry.width()) // 2
-        y = int((screen_geometry.height() - frame_geometry.height()) * 0.85)
+        y = int((screen_geometry.height() - frame_geometry.height()) * 0.9)
         
         # Move window to calculated position
         self.move(x, y)

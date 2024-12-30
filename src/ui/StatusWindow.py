@@ -10,11 +10,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
 class StatusWindow(BaseWindow):
-    def __init__(self):
+    def __init__(self, show_title=False):
         """
         Initialize the status window.
         """
-        super().__init__('WhisperWriter Status', 320, 120)
+        super().__init__('chirp :)', 250, 70, show_title)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint
                             | Qt.WindowType.Tool | Qt.WindowType.WindowDoesNotAcceptFocus)
 
@@ -23,13 +23,17 @@ class StatusWindow(BaseWindow):
 
         self.icon_label = QLabel()
         self.icon_label.setFixedSize(32, 32)
-        microphone_path = os.path.join('assets', 'microphone.png')
+        microphone_path = os.path.join('assets', 'chirp-logo.png')
         pencil_path = os.path.join('assets', 'transcribing.png')
+        thinking_path = os.path.join('assets', 'thinking.png')
         self.microphone_pixmap = QPixmap(
             microphone_path).scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio,
                                     Qt.TransformationMode.SmoothTransformation)
         self.pencil_pixmap = QPixmap(
             pencil_path).scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio,
+                                Qt.TransformationMode.SmoothTransformation)
+        self.thinking_pixmap = QPixmap(
+            thinking_path).scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio,
                                 Qt.TransformationMode.SmoothTransformation)
         self.icon_label.setPixmap(self.microphone_pixmap)
         self.icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -70,8 +74,12 @@ class StatusWindow(BaseWindow):
         if 'recording' in message or 'streaming' in message:
             self.icon_label.setPixmap(self.microphone_pixmap)
 
-        elif 'transcribing' in message:
+        elif 'Transcribing' in message:
             self.icon_label.setPixmap(self.pencil_pixmap)
+        
+        elif 'Inferring' in message:
+            self.icon_label.setPixmap(self.thinking_pixmap)
+
         self.status_label.setText(message)
         self.show()
 

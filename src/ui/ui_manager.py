@@ -23,7 +23,7 @@ class UIManager:
 
         self.main_window = MainWindow()
         self.settings_window = SettingsWindow()
-        self.status_window = StatusWindow()
+        self.status_window = StatusWindow(show_title=False)
         self.tray_icon = TrayIcon()
 
         self.setup_connections()
@@ -56,6 +56,7 @@ class UIManager:
     def handle_profile_state_change(self, message):
         """Handle changes in profile states, updating status based on the chosen mode."""
         ConfigManager.log_print(message)
+        self.status_update_mode = "Window"
         if self.status_update_mode == "Window":
             self.show_status_window(message)
         elif self.status_update_mode == "Notification":
