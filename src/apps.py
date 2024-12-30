@@ -3,9 +3,9 @@ from typing import Dict
 
 from output_manager import OutputManager
 from transcription_manager import TranscriptionManager
+from llm_manager import LLMManager
 from enums import ProfileState, RecordingMode
 from event_bus import EventBus
-# from post_processing import PostProcessingManager
 from config_manager import ConfigManager
 
 
@@ -25,12 +25,12 @@ class App:
         self.config = ConfigManager.get_section('apps', name)
         self.event_bus = event_bus
         self.audio_queue = Queue()
+        self.inference_queue = Queue()
         self.output_manager = OutputManager(name, event_bus)
         self.recording_mode = RecordingMode.PRESS_TO_TOGGLE
         self.state = ProfileState.IDLE
-        # self.post_processor = PostProcessingManager(
-                                # self.config['post_processing']['enabled_scripts'])
         self.transcription_manager = TranscriptionManager(self, event_bus)
+        self.llm_manager = LLMManager(self, event_bus)
         # TODO: get from config
         self.is_streaming = False
         self.streaming_chunk_size = self.transcription_manager.get_preferred_streaming_chunk_size()
@@ -40,6 +40,8 @@ class App:
 
         self.event_bus.subscribe("raw_transcription_result", self.handle_raw_transcription)
         self.event_bus.subscribe("transcription_finished", self.handle_transcription_finished)
+        self.event_bus.subscribe("inferencing_result", self.handle_inferencing_result)
+        self.event_bus.subscribe("inferencing_finished", self.handle_inferencing_finished)
 
     def start_transcription(self, session_id: str):
         """Start the transcription process for this profile."""
@@ -63,16 +65,7 @@ class App:
 
     def finish_transcription(self):
         """Finish the transcription process and return to idle state."""
-        previous_state = self.state
-        self.state = ProfileState.IDLE
-        self.event_bus.emit("profile_state_change", '')
-
-        # Make sure to reset sid BEFORE calling ApplicationController via event
-        old_sid = self.current_session_id
-        self.current_session_id = None
-        # Only emit transcription_complete if we were actually transcribing
-        if previous_state in [ProfileState.TRANSCRIBING, ProfileState.RECORDING]:
-            self.event_bus.emit("transcription_complete", old_sid)
+        pass
 
     def handle_raw_transcription(self, result: Dict, session_id: str):
         """
@@ -85,23 +78,48 @@ class App:
         - 'language': Detected or specified language of the audio.
         - 'error': Any error message (None if no error occurred).
         """
-        # if session_id != self.current_session_id:
-        #     return
-
-        # processed_result = self.post_processor.process(result)
-
-        # if self.is_streaming:
-        #     self.result_handler.handle_result(processed_result)
-        # else:
-        #     self.output(processed_result['processed'])
-        pass
+        print(f"Session id: {session_id}")
+        print(f"Current session id: {self.current_session_id}")
+        print("FROM TRANSCRIPTION")
+        self.current_session_id = session_id
+        self.state = ProfileState.INFERENCING
+        self.event_bus.emit("profile_state_change", f"({self.name}) Inferring...")
+        self.llm_manager.inference_queue.put(result)
+        self.llm_manager.inference_queue.put(None)
+        self.llm_manager.start_inference(session_id)
 
     def handle_transcription_finished(self, profile_name: str):
         if profile_name == self.name:
             self.finish_transcription()
 
+    def handle_inferencing_result(self, result: Dict, session_id: str):
+        print(f"Session id: {session_id}")
+        print(f"Current session id: {self.current_session_id}")
+        if session_id != self.current_session_id:
+            return
+        
+        print(f"Inferencing result: {result}")
+        self.current_session_id = session_id
+        print(f"Current session id: {self.current_session_id}") 
+        self.output(result['processed'])
+
+    def handle_inferencing_finished(self, profile_name: str):
+        if profile_name == self.name:
+            self.finish_inferencing()
+
+    def finish_inferencing(self):
+        previous_state = self.state
+        self.state = ProfileState.IDLE
+        self.event_bus.emit("profile_state_change", '')
+
+        old_sid = self.current_session_id
+        self.current_session_id = None
+        if previous_state in [ProfileState.INFERENCING, ProfileState.RECORDING, ProfileState.TRANSCRIBING]:
+            self.event_bus.emit("inferencing_complete", old_sid)
+
     def output(self, text: str):
         """Output the processed text using the output manager."""
+        print(f"Outputting: {text}")
         if text:
             self.output_manager.typewrite(text)
 
@@ -127,8 +145,11 @@ class App:
         """Clean up resources and reset attributes for garbage collection."""
         self.recording_stopped()
         self.finish_transcription()
+        self.finish_inferencing()
         if self.transcription_manager:
             self.transcription_manager.cleanup()
+        if self.llm_manager:
+            self.llm_manager.cleanup()
         if self.output_manager:
             self.output_manager.cleanup()
         if self.event_bus:

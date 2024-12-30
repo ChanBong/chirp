@@ -99,6 +99,11 @@ class UIManager:
 
     def quit_application(self):
         """Quit the QApplication instance, effectively closing the application."""
+        # Close all windows first
+        self.main_window.close()
+        self.settings_window.close()
+        self.status_window.close()
+        self.tray_icon.hide()
         QApplication.instance().quit()
 
     def run_event_loop(self):

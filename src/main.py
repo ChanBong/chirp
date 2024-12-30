@@ -18,8 +18,13 @@ def main():
     ui_manager = UIManager(event_bus)
 
     controller = ApplicationController(ui_manager, event_bus)
-
-    exit_code = controller.run()
+    
+    try:
+        exit_code = controller.run()
+    finally:
+        # Ensure cleanup happens even if there's an error
+        controller.cleanup()
+        
     sys.exit(exit_code)
 
 

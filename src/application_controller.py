@@ -52,7 +52,7 @@ class ApplicationController:
         self.event_bus.subscribe("shortcut_triggered", self.handle_shortcut)
         self.event_bus.subscribe("audio_discarded", self.handle_audio_discarded)
         self.event_bus.subscribe("recording_stopped", self.handle_recording_stopped)
-        self.event_bus.subscribe("transcription_complete", self.handle_transcription_complete)
+        self.event_bus.subscribe("inferencing_finished", self.handle_transcription_complete)
         self.event_bus.subscribe("config_changed", self.handle_config_change)
         self.event_bus.subscribe("close_app", self.close_application)
 
@@ -160,6 +160,14 @@ class ApplicationController:
                                       f"app {app.name}.\n{initialization_error}")
                 break
 
+            try:
+                app.llm_manager.start()
+            except RuntimeError as e:
+                initialization_error = str(e)
+                ConfigManager.log_print(f"Failed to start LLM manager for "
+                                      f"app {app.name}.\n{initialization_error}")
+                break
+
         if initialization_error:
             self.cleanup()
             self.listening = False
@@ -174,6 +182,7 @@ class ApplicationController:
 
     def close_application(self):
         """Initiate the application closing process."""
+        self.cleanup()  # Add cleanup before emitting quit
         self.event_bus.emit("quit_application")
 
     def cleanup(self):

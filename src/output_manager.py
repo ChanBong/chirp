@@ -18,10 +18,17 @@ class OutputManager:
         self.keyboard = PynputController()
 
     def typewrite(self, text):
+        print(f"Typing: {text}")
         """Simulate typing using pynput."""
         for char in text:
-            self.keyboard.press(char)
-            self.keyboard.release(char)
+            # print the new lines when they are encountered
+            if char == '\n':
+                print(f"Typing: {char}")
+                self.keyboard.press(Key.enter)
+                self.keyboard.release(Key.enter)
+            else:
+                self.keyboard.press(char)
+                self.keyboard.release(char)
             time.sleep(self.interval)
 
     def backspace(self, count):
