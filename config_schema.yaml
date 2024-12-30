@@ -45,6 +45,13 @@ apps:
         - faster_whisper
         - openai
         - vosk
+    llm_backend:
+      value: ollama
+      type: str
+      description: "The backend to use for LLM processing. Options: openai, ollama"
+      options:
+        - openai
+        - ollama
     writing_key_press_delay:
       value: 0.005
       type: float
@@ -171,7 +178,7 @@ llm_backends:
       description: "Controls the randomness of the LLM output. Lower values make the output more focused and deterministic."
   ollama:
     model:
-      value: llama3.1
+      value: llama3.2:latest
       type: str
       description: "The model to use for LLM processing."
       options:

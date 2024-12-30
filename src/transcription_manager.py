@@ -89,6 +89,7 @@ class TranscriptionManager:
             else:
                 while not self.stop_event.is_set():
                     try:
+                        print(f"Audio queue contents: {list(self.audio_queue.queue)}")
                         audio_data = self.audio_queue.get(timeout=0.2)
                         if audio_data is None:  # Sentinel value
                             break

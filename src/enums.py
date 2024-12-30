@@ -12,7 +12,7 @@ class ProfileState(Enum):
     IDLE = 0
     RECORDING = 1
     TRANSCRIBING = 2
-
+    INFERENCING = 3
 
 class AudioManagerState(Enum):
     STOPPED = 0
