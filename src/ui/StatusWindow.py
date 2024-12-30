@@ -24,7 +24,7 @@ class StatusWindow(BaseWindow):
         self.icon_label = QLabel()
         self.icon_label.setFixedSize(32, 32)
         microphone_path = os.path.join('assets', 'microphone.png')
-        pencil_path = os.path.join('assets', 'pencil.png')
+        pencil_path = os.path.join('assets', 'transcribing.png')
         self.microphone_pixmap = QPixmap(
             microphone_path).scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio,
                                     Qt.TransformationMode.SmoothTransformation)
