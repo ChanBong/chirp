@@ -21,7 +21,7 @@ class ConfigValidator:
             return
 
         for key, value in schema.items():
-            if key in ['transcription_backends', 'llm_backends']:
+            if key in ['transcription_backends', 'llm_backends', 'activation_backends']:
                 continue  # Skip validating these backend sections directly
             current_path = path + [key]
             
@@ -113,53 +113,76 @@ class ProfileManager:
             active_app_names = self.config.get('global_options', {}).get('active_apps', [])
             return [app for app in all_apps if app['name'] in active_app_names]
         return all_apps
+    
+
+    def create_expandable_key(self, key: str, option: str) -> Dict:
+        new_app = {}
+        for option_key, option_value in self.schema[key][option].items():
+            new_app[option_key] = self._get_default_value_from_schema(option_value)
+        return new_app
+
 
     def create_app(self, name: str = 'Default') -> Dict:
         unique_name = self._generate_unique_name(name)
         new_app = {'name': unique_name}
+
+        # Expandable keys are keys that can be expanded into a dictionary
+        expandable_keys = ['activation_backend_type', 'transcription_backend_type', 'llm_backend_type']
+        
         for key, schema_value in self.schema['apps'][0].items():
-            if key == 'backend_type':
+            if key in expandable_keys:
                 new_app[key] = schema_value['value']
-            elif key == 'backend':
+            elif key == 'activation_backend':
+                new_app[key] = {}
+            elif key == 'transcription_backend':
+                new_app[key] = {}
+            elif key == 'llm_backend':
                 new_app[key] = {}
             elif key != 'name':
                 new_app[key] = self._get_default_value_from_schema(schema_value)
 
-        backend_type = new_app['backend_type']
-        if backend_type in self.schema['available_backends']:
-            for option_key, option_value in self.schema['available_backends'][backend_type].items():
-                new_app['backend'][option_key] = self._get_default_value_from_schema(option_value)
+        activation_backend_type = new_app['activation_backend_type']
+        if activation_backend_type in self.schema['activation_backends']:
+            new_app['activation_backend'] = self.create_expandable_key('activation_backends', activation_backend_type)
+        
+        transcription_backend_type = new_app['transcription_backend_type']
+        if transcription_backend_type in self.schema['transcription_backends']:
+            new_app['transcription_backend'] = self.create_expandable_key('transcription_backends', transcription_backend_type)
+        
+        llm_backend_type = new_app['llm_backend_type']
+        if llm_backend_type in self.schema['llm_backends']:
+            new_app['llm_backend'] = self.create_expandable_key('llm_backends', llm_backend_type)
 
         return new_app
 
-    def add_profile(self, name: str) -> Dict:
-        new_profile = self.create_app(name)
+    def add_app(self, name: str) -> Dict:
+        new_app = self.create_app(name)
         if 'apps' not in self.config:
             self.config['apps'] = []
-        self.config['apps'].append(new_profile)
-        return new_profile
+        self.config['apps'].append(new_app)
+        return new_app
 
-    def delete_profile(self, name: str) -> bool:
+    def delete_app(self, name: str) -> bool:
         if len(self.config['apps']) <= 1:
             return False  # Prevent deleting the last profile
         self.config['apps'] = [p for p in self.config['apps'] if p['name'] != name]
-        active_profiles = self.config.get('global_options', {}).get('active_profiles', [])
-        if name in active_profiles:
-            active_profiles.remove(name)
+        active_apps = self.config.get('global_options', {}).get('active_apps', [])
+        if name in active_apps:
+            active_apps.remove(name)
         return True
 
-    def rename_profile(self, old_name: str, new_name: str) -> bool:
+    def rename_app(self, old_name: str, new_name: str) -> bool:
         if old_name == new_name:
             return True
-        if any(profile['name'] == new_name for profile in self.config['apps']):
+        if any(app['name'] == new_name for app in self.config['apps']):
             return False
-        for profile in self.config['apps']:
-            if profile['name'] == old_name:
-                profile['name'] = new_name
-                # Update active_profiles if necessary
-                active_profiles = self.config.get('global_options', {}).get('active_apps', [])
-                if old_name in active_profiles:
-                    active_profiles[active_profiles.index(old_name)] = new_name
+        for app in self.config['apps']:
+            if app['name'] == old_name:
+                app['name'] = new_name
+                # Update active_apps if necessary
+                active_apps = self.config.get('global_options', {}).get('active_apps', [])
+                if old_name in active_apps:
+                    active_apps[active_apps.index(old_name)] = new_name
                 return True
         return False
 
@@ -174,7 +197,7 @@ class ProfileManager:
     def _generate_unique_name(self, base_name: str) -> str:
         counter = 1
         new_name = base_name
-        while any(profile['name'] == new_name for profile in self.config.get('profiles', [])):
+        while any(app['name'] == new_name for app in self.config.get('apps', [])):
             new_name = f"{base_name} ({counter})"
             counter += 1
         return new_name
@@ -191,7 +214,7 @@ class ConfigManager:
         cls._event_bus = event_bus
         cls._schema = ConfigLoader.load_yaml('config_schema.yaml')
         # Initialize with empty profiles list
-        cls._profile_manager = ProfileManager({'profiles': []}, cls._schema)
+        cls._profile_manager = ProfileManager({'apps': []}, cls._schema)
         cls._config = cls._load_config()
         cls._validate_config()
         cls._profile_manager.config = cls._config  # Update ProfileManager with loaded config
@@ -201,22 +224,21 @@ class ConfigManager:
         return cls._profile_manager.get_apps(active_only)
 
     @classmethod
-    def rename_profile(cls, old_name: str, new_name: str) -> bool:
-        return cls._profile_manager.rename_profile(old_name, new_name)
+    def rename_app(cls, old_name: str, new_name: str) -> bool:
+        return cls._profile_manager.rename_app(old_name, new_name)
 
     @classmethod
-    def create_profile(cls, name: str) -> Dict:
+    def create_app(cls, name: str) -> Dict:
         unique_name = cls._profile_manager._generate_unique_name(name)
-        return cls._profile_manager.add_profile(unique_name)
+        return cls._profile_manager.add_app(unique_name)
 
     @classmethod
-    def delete_profile(cls, name: str) -> bool:
-        return cls._profile_manager.delete_profile(name)
+    def delete_app(cls, name: str) -> bool:
+        return cls._profile_manager.delete_app(name)
 
     @classmethod
     def get_section(cls, section_name: str, profile_name: Optional[str] = None) -> Dict:
         if profile_name:
-            print(cls._config)
             profile = next((p for p in cls._config['apps'] if p['name'] == profile_name), None)
             if not profile:
                 raise ValueError(f"Profile '{profile_name}' not found")
@@ -229,7 +251,7 @@ class ConfigManager:
     @classmethod
     def get_value(cls, key: str, profile_name: Optional[str] = None) -> Any:
         keys = key.split('.')
-        if profile_name or (keys[0] == 'profiles' and len(keys) > 1):
+        if profile_name or (keys[0] == 'apps' and len(keys) > 1):
             if not profile_name:
                 profile_name = keys[1]
                 keys = keys[2:]
@@ -250,10 +272,11 @@ class ConfigManager:
     @classmethod
     def set_value(cls, key: str, value: Any, profile_name: Optional[str] = None):
         keys = key.split('.')
-        if profile_name or (keys[0] == 'profiles' and len(keys) > 1):
+        if profile_name or (keys[0] == 'apps' and len(keys) > 1):
             if not profile_name:
                 profile_name = keys[1]
                 keys = keys[2:]
+            # Find the profile in the apps list
             profile = next((p for p in cls._config['apps'] if p['name'] == profile_name), None)
             if not profile:
                 raise ValueError(f"Profile '{profile_name}' not found")
@@ -261,37 +284,66 @@ class ConfigManager:
         else:
             target = cls._config
 
+        # Navigate to the target location
         for k in keys[:-1]:
             if k not in target:
                 target[k] = {}
             target = target[k]
+        
+        # Set the value
         target[keys[-1]] = value
 
-        if keys[-1] == 'backend_type':
-            # When backend_type changes, reset the backend options
-            backend_schema = cls._schema['available_backends'][value]
-            target['backend'] = {k: v['value'] for k, v in backend_schema.items() if 'value' in v}
+        # Special handling for backend type changes
+        if keys[-1] == 'transcription_backend_type':
+            backend_schema = cls._schema['transcription_backends'][value]
+            target['transcription_backend'] = {k: v['value'] for k, v in backend_schema.items() if 'value' in v}
+
+        if keys[-1] == 'llm_backend_type':
+            backend_schema = cls._schema['llm_backends'][value]
+            target['llm_backend'] = {k: v['value'] for k, v in backend_schema.items() if 'value' in v}
+
+        if keys[-1] == 'activation_backend_type':
+            backend_schema = cls._schema['activation_backends'][value]
+            target['activation_backend'] = {k: v['value'] for k, v in backend_schema.items() if 'value' in v}
+
+        
 
     @classmethod
     def get_schema_for_key(cls, key: str) -> Dict:
+        # print(f"key: {key}")
         schema = cls._schema
         parts = key.split('.')
 
         # Special handling for profiles
-        if parts[0] == 'profiles':
-            profile_schema = schema.get('profiles', [{}])[0]
+        if parts[0] == 'apps':
+            profile_schema = schema.get('apps', [{}])[0]
             profile_name = parts[1]
             remaining_parts = parts[2:]
-
+            # print(f"profile_schema: {profile_schema}, profile_name: {profile_name}, remaining_parts: {remaining_parts}")
             # Handle backend options specially
-            if remaining_parts[0] == 'backend' and len(remaining_parts) > 1:
-                backend_type = cls.get_value(f"profiles.{profile_name}.backend_type")
-                if backend_type:
-                    backend_schema = cls._schema.get('available_backends',
-                                                     {}).get(backend_type, {})
+            if remaining_parts[0] == 'activation_backend' and len(remaining_parts) > 1:
+                activation_backend_type = cls.get_value(f"apps.{profile_name}.activation_backend_type")
+                if activation_backend_type:
+                    activation_schema = cls._schema.get('activation_backends', {}).get(activation_backend_type, {})
                     for part in remaining_parts[1:]:
-                        backend_schema = backend_schema.get(part, {})
-                    return backend_schema
+                        activation_schema = activation_schema.get(part, {})
+                    return activation_schema
+            elif remaining_parts[0] == 'transcription_backend' and len(remaining_parts) > 1:
+                transcription_backend_type = cls.get_value(f"apps.{profile_name}.transcription_backend_type")
+                if transcription_backend_type:
+                    transcription_backend_schema = cls._schema.get('transcription_backends', {}).get(transcription_backend_type, {})
+                    for part in remaining_parts[1:]:
+                        transcription_backend_schema = transcription_backend_schema.get(part, {})
+                    return transcription_backend_schema
+            elif remaining_parts[0] == 'llm_backend' and len(remaining_parts) > 1:  
+                llm_backend_type = cls.get_value(f"apps.{profile_name}.llm_backend_type")
+                # print(f"llm_backend_type: {llm_backend_type}")
+                if llm_backend_type:
+                    llm_backend_schema = cls._schema.get('llm_backends', {}).get(llm_backend_type, {})
+                    # print(f"llm_backend_schema: {llm_backend_schema}")
+                    for part in remaining_parts[1:]:
+                        llm_backend_schema = llm_backend_schema.get(part, {})
+                    return llm_backend_schema
             else:
                 # Navigate through the profile schema
                 for part in remaining_parts:
@@ -333,13 +385,13 @@ class ConfigManager:
 
     @classmethod
     def _create_default_config(cls) -> Dict:
-        default_config = {}
+        default_config = {'apps': []}
         for section, content in cls._schema.items():
             if section == 'apps':
-                # Handle apps section specially as it's a list
-                default_config['apps'] = [cls._create_default_section(content[0])]
-            elif section in ['transcription_backends', 'llm_backends']:
-                # Skip these sections as they're handled by the backend configuration
+                default_profile = cls._profile_manager.create_app()
+                default_config['apps'].append(default_profile)
+            elif section in ['transcription_backends', 'llm_backends', 'activation_backends']:
+                # Skip this section as it's not part of the actual config
                 continue
             else:
                 default_config[section] = cls._create_default_section(content)
@@ -378,4 +430,6 @@ class ConfigManager:
             return cls._schema.get('transcription_backends', {})
         elif backend_type == 'llm':
             return cls._schema.get('llm_backends', {})
+        elif backend_type == 'activation':
+            return cls._schema.get('activation_backends', {})
         return {}

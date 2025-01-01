@@ -21,9 +21,7 @@ class OutputManager:
         print(f"Typing: {text}")
         """Simulate typing using pynput."""
         for char in text:
-            # print the new lines when they are encountered
             if char == '\n':
-                print(f"Typing: {char}")
                 self.keyboard.press(Key.enter)
                 self.keyboard.release(Key.enter)
             else:

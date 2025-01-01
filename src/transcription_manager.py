@@ -13,7 +13,7 @@ class TranscriptionManager:
         self.app_name = app.name
         self.event_bus = event_bus
         self.audio_queue = app.audio_queue
-        self.backend_type = ConfigManager.get_value('transcription_backend', self.app_name)
+        self.backend_type = ConfigManager.get_value('transcription_backend_type', self.app_name)
         backend_class = self._get_backend_class()
         self.backend: TranscriptionBackendBase = backend_class()
         self.processing_thread = None

@@ -14,7 +14,7 @@ class LLMManager:
         self.app_name = app.name
         self.event_bus = event_bus
         self.inference_queue = app.inference_queue
-        self.backend_type = ConfigManager.get_value('llm_backend', self.app_name)
+        self.backend_type = ConfigManager.get_value('llm_backend_type', self.app_name)
         self.backend = self._get_backend_instance()
         self.current_session_id = None
         self.processing_thread = None

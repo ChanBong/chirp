@@ -12,7 +12,7 @@ class EventBus(QObject):
         self._subscribers = defaultdict(list)
         self._emitter = EventEmitter()
         self._emitter.signal.connect(self._process_event)
-        self.debug = True # Get debug setting from config
+        self.debug = False # Get debug setting from config
 
     def subscribe(self, event_type: str, callback: Callable):
         if self.debug:

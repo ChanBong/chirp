@@ -124,7 +124,7 @@ class ApplicationController:
     def handle_config_change(self):
         """Handle configuration changes by reloading profiles and restarting components."""
         self.cleanup()
-        self.load_active_profiles()
+        self.load_active_apps()
         if self.listening:
             self.start_core_components()
 
