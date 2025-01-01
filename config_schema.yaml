@@ -65,14 +65,6 @@ apps:
     llm_backend:
       type: dict
       description: "The setup for the LLM backend."
-    SYSTEM_PROMPT:
-      value: null
-      type: str
-      description: "The system prompt to use for the app."
-    USER_PROMPT:
-      value: null
-      type: str
-      description: "The user prompt to use for the app."
     output_options:
       output_mode:
         value: text
