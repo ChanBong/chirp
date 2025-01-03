@@ -8,8 +8,6 @@ from config_manager import ConfigManager
 
 
 def main():
-    if os.path.exists('config.yaml'):
-        os.remove('config.yaml')
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
 
