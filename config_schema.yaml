@@ -58,10 +58,11 @@ apps:
     llm_backend_type:
       value: ollama
       type: str
-      description: "The backend to use for LLM processing. Options: openai, ollama"
+      description: "The backend to use for LLM processing. Options: openai, ollama, none"
       options:
         - openai
         - ollama
+        - none
     llm_backend:
       type: dict
       description: "The setup for the LLM backend."
@@ -211,6 +212,10 @@ llm_backends:
       value: null
       type: str
       description: "Path to the model file. Leave empty to use online models."
+  none:
+    value: {}
+    type: dict
+    description: "No LLM processing will be performed."
 
 
 activation_backends:

@@ -7,7 +7,7 @@ from config_manager import ConfigManager
 from event_bus import EventBus
 from llm.OpenAIClient import OpenAIClient
 from llm.OllamaClient import OllamaClient
-
+from llm.NoAIClient import NoAIClient
 
 class LLMManager:
     def __init__(self, app, event_bus: EventBus):
@@ -22,7 +22,9 @@ class LLMManager:
         self.llm_event = threading.Event()
 
     def _get_backend_instance(self):
-        if self.backend_type == 'openai':
+        if self.backend_type == 'none':
+            return NoAIClient()
+        elif self.backend_type == 'openai':
             return OpenAIClient()
         elif self.backend_type == 'ollama':
             return OllamaClient()

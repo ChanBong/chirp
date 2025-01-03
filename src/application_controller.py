@@ -160,13 +160,15 @@ class ApplicationController:
                                       f"app {app.name}.\n{initialization_error}")
                 break
 
-            try:
-                app.llm_manager.start()
-            except RuntimeError as e:
-                initialization_error = str(e)
-                ConfigManager.log_print(f"Failed to start LLM manager for "
-                                      f"app {app.name}.\n{initialization_error}")
-                break
+            # Only try to start LLM manager if it exists
+            if app.llm_manager:
+                try:
+                    app.llm_manager.start()
+                except RuntimeError as e:
+                    initialization_error = str(e)
+                    ConfigManager.log_print(f"Failed to start LLM manager for "
+                                          f"app {app.name}.\n{initialization_error}")
+                    break
 
         if initialization_error:
             self.cleanup()
