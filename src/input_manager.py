@@ -351,7 +351,14 @@ class InputManager:
         active_profiles = ConfigManager.get_apps(active_only=True)
         for profile in active_profiles:
             profile_name = profile['name']
-            shortcut = ConfigManager.get_value('activation_key', profile_name)
+            activation_backend_type = ConfigManager.get_value('activation_backend_type', profile_name)
+            activation_backend = ConfigManager.get_value('activation_backend', profile_name)
+            if activation_backend_type == 'press_together':
+                shortcut = activation_backend['hotkey']
+            elif activation_backend_type == 'rapid_tap':
+                shortcut = f"TAP:{activation_backend['trigger_key']}>{activation_backend['secondary_key']}"
+            else:
+                raise ValueError(f"Unsupported activation backend type: {activation_backend_type}")
             keys = self.parse_key_combination(shortcut)
             is_tap_sequence = isinstance(shortcut, str) and shortcut.upper().startswith('TAP:')
             self.shortcuts[profile_name] = KeyChord(keys, is_tap_sequence=is_tap_sequence)
