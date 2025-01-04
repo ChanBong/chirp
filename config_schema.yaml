@@ -40,6 +40,10 @@ apps:
         value: null
         type: "int or null"
         description: "The numeric index of the sound device to use for recording. Run `python list_audio_devices.py` to to find device numbers."
+      language:
+        value: auto
+        type: str
+        description: "The language to use for transcription. Options: auto, en, es, fr, de, it, pt, zh, etc."
       gain:
         value: 1.0
         type: float

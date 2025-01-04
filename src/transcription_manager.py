@@ -39,11 +39,11 @@ class TranscriptionManager:
 
     def start(self):
         if not self.backend.is_initialized():
-            backend_options = ConfigManager.get_section('backend', self.app_name)
+            backend_options = ConfigManager.get_section('transcription_backend', self.app_name)
             try:
                 self.backend.initialize(backend_options)
             except Exception as e:
-                raise RuntimeError(f"Failed to initialize backend for app "
+                raise RuntimeError(f"Failed to initialize transcription backend for app "
                                    f"{self.app_name}.\n{e}")
 
         if not self.processing_thread:
@@ -89,7 +89,6 @@ class TranscriptionManager:
             else:
                 while not self.stop_event.is_set():
                     try:
-                        print(f"Audio queue contents: {list(self.audio_queue.queue)}")
                         audio_data = self.audio_queue.get(timeout=0.2)
                         if audio_data is None:  # Sentinel value
                             break

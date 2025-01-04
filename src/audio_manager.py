@@ -66,7 +66,8 @@ class AudioManager:
 
     def _record_audio(self, context: RecordingContext):
         recording_options = ConfigManager.get_section('recording_options', context.app.name)
-        audio_config = self._prepare_audio_config(context, recording_options)
+        save_debug_audio = ConfigManager.get_value('global_options.save_debug_audio', False)
+        audio_config = self._prepare_audio_config(context, recording_options, save_debug_audio)
 
         stream = self._setup_audio_stream(audio_config)
         debug_wav_file = (self._setup_debug_file(context, audio_config) if
@@ -87,7 +88,7 @@ class AudioManager:
         if audio_config['use_vad'] and self.state != AudioManagerState.STOPPED:
             self.event_bus.emit("recording_stopped", context.session_id)
 
-    def _prepare_audio_config(self, context: RecordingContext, recording_options):
+    def _prepare_audio_config(self, context: RecordingContext, recording_options, save_debug_audio):
         sample_rate = recording_options.get('sample_rate', 16000)
         streaming_chunk_size = context.app.streaming_chunk_size or 4096
         frame_size = self._calculate_frame_size(sample_rate, streaming_chunk_size,
@@ -104,9 +105,10 @@ class AudioManager:
             'frame_size': frame_size,
             'silence_frames': int(silence_duration_ms / (frame_size / sample_rate * 1000)),
             'sound_device': self._get_sound_device(recording_options.get('sound_device')),
-            'save_debug_audio': recording_options.get('save_debug_audio', False),
+            'save_debug_audio': save_debug_audio,
             'use_vad': recording_mode in (RecordingMode.VOICE_ACTIVITY_DETECTION,
-                                          RecordingMode.CONTINUOUS)
+                                          RecordingMode.CONTINUOUS),
+            'language': recording_options.get('language', 'auto'),
         }
 
     def _setup_audio_stream(self, audio_config):
@@ -174,7 +176,8 @@ class AudioManager:
             chunk = np.array(recording[:chunk_size], dtype=np.float32)
 
             # Send the chunk for processing
-            self._push_audio_chunk(context, chunk, sample_rate, audio_config['channels'])
+            self._push_audio_chunk(context, chunk, sample_rate, audio_config['channels'],
+                                   audio_config['language'])
 
             # Remove the processed chunk from the recording
             del recording[:chunk_size]
@@ -204,7 +207,8 @@ class AudioManager:
             self.event_bus.emit("audio_discarded", context.session_id)
         elif (duration * 1000) >= min_duration_ms:
             self._push_audio_chunk(context, audio_data,
-                                   audio_config['sample_rate'], audio_config['channels'])
+                                   audio_config['sample_rate'], audio_config['channels'],
+                                   audio_config['language'])
         else:
             ConfigManager.log_print('Discarded due to being too short.')
             self.event_bus.emit("audio_discarded", context.session_id)
@@ -258,12 +262,12 @@ class AudioManager:
         return frame_array
 
     def _push_audio_chunk(self, context: RecordingContext, audio_data: np.ndarray,
-                          sample_rate: int, channels: int):
+                          sample_rate: int, channels: int, language: str = 'auto'):
         context.app.audio_queue.put({
             'session_id': context.session_id,
             'sample_rate': sample_rate,
             'channels': channels,
-            'language': 'auto',
+            'language': language,
             'audio_chunk': audio_data
         })
 

@@ -172,3 +172,4 @@ cython_debug/
 
 DESIGN.md
 config.yaml
+debug_audio/
