@@ -230,7 +230,7 @@ activation_backends:
       description: "The hotkey to use for activation."
   rapid_tap:
     trigger_key:
-      value: CAPS LOCK
+      value: CAPS_LOCK
       type: str
       description: "The key to use for rapid activation."
     secondary_key:
