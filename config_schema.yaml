@@ -40,6 +40,10 @@ apps:
         value: null
         type: "int or null"
         description: "The numeric index of the sound device to use for recording. Run `python list_audio_devices.py` to to find device numbers."
+      read_from_clipboard:
+        value: false
+        type: bool
+        description: "Whether to read the clipboard content for the user prompt."
       language:
         value: auto
         type: str
@@ -78,6 +82,12 @@ apps:
         options:
           - text
           - voice
+          - clipboard
+          - notification
+      save_output_to_clipboard:
+        value: true
+        type: bool
+        description: Save the final output to the clipboard
       writing_key_press_delay:
         value: 0.005
         type: float

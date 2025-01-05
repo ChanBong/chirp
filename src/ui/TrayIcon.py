@@ -8,6 +8,7 @@ from PyQt6.QtGui import QPixmap
 class TrayIcon(QObject):
     open_settings = pyqtSignal()
     close_app = pyqtSignal()
+    message_clicked = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -31,6 +32,10 @@ class TrayIcon(QObject):
         tray_menu.addAction(exit_action)
 
         self.tray_icon.setContextMenu(tray_menu)
+
+    def on_message_clicked(self):
+        # Re-emit so UIManager can pick it up
+        self.message_clicked.emit()
 
     def show(self):
         if self.tray_icon:

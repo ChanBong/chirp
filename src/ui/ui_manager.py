@@ -5,6 +5,7 @@ from ui.MainWindow import MainWindow
 from ui.SettingsWindow import SettingsWindow
 from ui.StatusWindow import StatusWindow
 from ui.TrayIcon import TrayIcon
+from ui.ScrollWindow import ScrollableMessageDialog
 from config_manager import ConfigManager
 
 
@@ -26,6 +27,8 @@ class UIManager:
         self.status_window = StatusWindow(show_title=False)
         self.tray_icon = TrayIcon()
 
+        self.long_message_cache = None
+
         self.setup_connections()
 
     def setup_connections(self):
@@ -35,10 +38,12 @@ class UIManager:
         self.main_window.close_app.connect(self.initiate_close)
         self.tray_icon.open_settings.connect(self.settings_window.show)
         self.tray_icon.close_app.connect(self.initiate_close)
+        self.tray_icon.message_clicked.connect(self.handle_tray_message_clicked)
         self.event_bus.subscribe("quit_application", self.quit_application)
         self.event_bus.subscribe("profile_state_change", self.handle_profile_state_change)
         self.event_bus.subscribe("transcription_error", self.show_error_message)
         self.event_bus.subscribe("initialization_successful", self.hide_main_window)
+        self.event_bus.subscribe("show_balloon", self.show_notification)
 
     def show_main_window(self):
         """Display the main application window and show the system tray icon."""
@@ -69,17 +74,55 @@ class UIManager:
         else:
             self.status_window.hide()
 
-    def show_notification(self, message):
+    def show_notification(self, message, app_name):
         """Display a desktop notification."""
         if not message:
             message = "Finished."
 
-        self.tray_icon.tray_icon.showMessage(
-            "WhisperWriter Status",
-            message,
-            QIcon(),
-            3000
-        )
+        # Check word length
+        print(f"Message: {message}")
+        words = message.split()
+        print(f"Words: {words}")
+        if len(words) > 100:
+            # Truncate to 100 words
+            short_message = " ".join(words[:100]) + "..."
+            # Save the full message for later use
+            self.long_message_cache = message
+
+            # Show the balloon with the truncated text
+            self.tray_icon.tray_icon.showMessage(
+                f"{app_name}",
+                short_message + "\n(click to read more)",
+                QIcon(),
+                5000  # or however many ms you want
+            )
+        else:
+            # Show the full message
+            self.long_message_cache = message  # No need to store
+            self.tray_icon.tray_icon.showMessage(
+                f"{app_name}",
+                message,
+                QIcon(),
+                5000
+            )
+
+    def handle_tray_message_clicked(self):
+        """
+        Called when user clicks the tray balloon notification.
+        Check if we had a truncated message. If so, show the full text.
+        """
+        if self.long_message_cache:
+            # Show a dialog with scrollable text
+            self.show_full_message_dialog(self.long_message_cache)
+        else:
+            # No long message stored, so do nothing or show a small pop-up, etc.
+            pass
+
+    def show_full_message_dialog(self, long_text):
+        print(f"Showing full message dialog: {long_text}")
+        dialog = ScrollableMessageDialog(long_text)
+        dialog.exec()  # or dialog.show() if you prefer a non-modal window
+
 
     def show_error_message(self, message):
         """Display an error message in a QMessageBox."""
