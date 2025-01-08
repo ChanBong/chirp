@@ -3,6 +3,7 @@ from typing import Dict, Any, List
 class NoAIClient:
     def __init__(self):
         self._initialized = True
+        self.model = None
 
     def is_initialized(self):
         return self._initialized
@@ -10,12 +11,9 @@ class NoAIClient:
     def initialize(self, options: Dict[str, Any]):
         self._initialized = True
 
-    def inference(self, messages: List[Dict]):
-        response = {
-            "processed": messages['raw_text'].strip(),
-            "error": None
-        }
-        return response
+    def stream_completion(self, messages, model, **kwargs):
+        user_message = messages[-1]['content']
+        yield user_message
 
     def cleanup(self):
         self._initialized = False

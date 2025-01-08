@@ -1,0 +1,3 @@
+RAW TRANSCRIPTION: {{transcription}}
+
+Provide a concise and factual response to the user's query. Only respond to the query and don't ask any questions.

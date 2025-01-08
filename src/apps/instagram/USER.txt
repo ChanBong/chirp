@@ -1,0 +1,4 @@
+RAW TRANSCRIPTION:
+{{transcription}}
+
+Please remove filler words, repeated stammers, and fix minor grammar mistakes, while keeping the tone casual and friendly. Return only the cleaned, informal text.

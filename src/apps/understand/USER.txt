@@ -1,0 +1,4 @@
+RAW TRANSCRIPTION: {{transcription}}
+CLIPBOARD CONTENT: {{clipboard_content}}
+
+Explain the CLIPBOARD CONTENT in the context of the RAW TRANSCRIPTION. Be helpful and concise. Only respond with the explanation and don't ask any questions.

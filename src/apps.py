@@ -7,6 +7,7 @@ from llm_manager import LLMManager
 from enums import ProfileState, RecordingMode
 from event_bus import EventBus
 from config_manager import ConfigManager
+from utils import to_clipboard, read_clipboard
 
 
 class App:
@@ -23,6 +24,10 @@ class App:
         """Initialize the Profile with name, configuration, and necessary components."""
         self.name = name
         self.config = ConfigManager.get_section('apps', name)
+        print(f"Config: {self.config}")
+        self.read_from_clipboard = self.config.get('recording_options', {}).get('read_from_clipboard', False)
+        self.save_output_to_clipboard = self.config.get('output_options', {}).get('save_output_to_clipboard', False)
+        self.output_mode = self.config.get('output_options', {}).get('output_mode', 'text')
         self.event_bus = event_bus
         self.audio_queue = Queue()
         self.inference_queue = Queue()
@@ -31,11 +36,9 @@ class App:
         self.state = ProfileState.IDLE
         self.transcription_manager = TranscriptionManager(self, event_bus)
         self.llm_manager = LLMManager(self, event_bus)
-        # TODO: get from config
         self.is_streaming = False
         self.streaming_chunk_size = self.transcription_manager.get_preferred_streaming_chunk_size()
-        self.result_handler = (StreamingResultHandler(self.output_manager)
-                               if self.is_streaming else None)
+        self.result_handler = (StreamingResultHandler(self.output_manager) if self.is_streaming else None)
         self.current_session_id = None
 
         self.event_bus.subscribe("raw_transcription_result", self.handle_raw_transcription)
@@ -49,6 +52,7 @@ class App:
         self.state = ProfileState.RECORDING
         self.event_bus.emit("profile_state_change", f"({self.name}) "
                             f"{'Streaming' if self.is_streaming else 'Recording'}...")
+        print(f"Starting transcription for session {self.current_session_id}")
         self.transcription_manager.start_transcription(session_id)
 
     def recording_stopped(self):
@@ -56,6 +60,9 @@ class App:
         if self.state == ProfileState.RECORDING:
             self.event_bus.emit("profile_state_change", f"({self.name}) Transcribing...")
             self.state = ProfileState.TRANSCRIBING
+            print(f"Recording stopped for session {self.current_session_id}")
+        else:
+            print(f"Recording stopped for session {self.current_session_id}")
 
     def is_recording(self) -> bool:
         return self.state == ProfileState.RECORDING
@@ -78,13 +85,27 @@ class App:
         - 'language': Detected or specified language of the audio.
         - 'error': Any error message (None if no error occurred).
         """
-        print(f"Session id: {session_id}")
-        print(f"Current session id: {self.current_session_id}")
-        print("FROM TRANSCRIPTION")
+        # print(f"Session id: {session_id}")
+        # print(f"Current session id: {self.current_session_id}")
+
+        if session_id != self.current_session_id:
+            return
+
         self.current_session_id = session_id
         self.state = ProfileState.INFERENCING
         self.event_bus.emit("profile_state_change", f"({self.name}) Inferring...")
-        self.llm_manager.inference_queue.put(result)
+
+        clipboard = read_clipboard()
+        clipboard_content = ""
+        if clipboard and self.read_from_clipboard:
+            clipboard_content = clipboard['content']
+
+        user_message = {
+            "transcription": result['raw_text'],
+            "clipboard_content": clipboard_content
+        }
+        
+        self.llm_manager.inference_queue.put(user_message)
         self.llm_manager.inference_queue.put(None)
         self.llm_manager.start_inference(session_id)
 
@@ -93,15 +114,15 @@ class App:
             self.finish_transcription()
 
     def handle_inferencing_result(self, result: Dict, session_id: str):
-        print(f"Session id: {session_id}")
-        print(f"Current session id: {self.current_session_id}")
+        # print(f"Session id: {session_id}")
+        # print(f"Current session id: {self.current_session_id}")
         if session_id != self.current_session_id:
             return
         
-        print(f"Inferencing result: {result}")
+        # print(f"Inferencing result: {result}")
         self.current_session_id = session_id
-        print(f"Current session id: {self.current_session_id}") 
-        self.output(result['processed'])
+        # print(f"Current session id: {self.current_session_id}") 
+        self.output(result['assistant'])
 
     def handle_inferencing_finished(self, profile_name: str):
         if profile_name == self.name:
@@ -120,8 +141,21 @@ class App:
     def output(self, text: str):
         """Output the processed text using the output manager."""
         print(f"Outputting: {text}")
-        if text:
+        if not text:
+            return
+
+        if self.output_mode == 'clipboard':
+            to_clipboard(text)
+        elif self.output_mode == 'notification':
+            self.event_bus.emit("show_balloon", text, self.name)
+        elif self.output_mode == 'text':
             self.output_manager.typewrite(text)
+        elif self.output_mode == 'voice':
+            print("Support for voice output is not implemented yet. Output mode set to notification")
+            self.event_bus.emit("show_balloon", text, self.name)
+
+        if self.save_output_to_clipboard:
+            to_clipboard(text)
 
     def should_start_on_press(self) -> bool:
         """Determine if recording should start on key press."""
@@ -176,7 +210,7 @@ class StreamingResultHandler:
         self.buffer = ""
 
     def handle_result(self, result: Dict):
-        new_text = result['processed']
+        new_text = result['assistant']
 
         if not new_text:
             return

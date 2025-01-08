@@ -1,0 +1,7 @@
+RAW TRANSCRIPTION:
+{{clipboard_content}}
+
+USER INSTRUCTION:
+{{transcription}}
+
+Please apply the instruction to the raw transcription, removing filler words, repeated stammers, and fixing minor grammar mistakes. Return only the updated text and nothing else.

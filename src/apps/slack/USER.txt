@@ -1,0 +1,4 @@
+RAW TRANSCRIPTION:
+{{transcription}}
+
+Please remove filler words, repeated stammers, and fix minor grammar mistakes, while preserving the meaning and style. Return only the cleaned transcript.

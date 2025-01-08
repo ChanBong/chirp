@@ -8,6 +8,8 @@ from event_bus import EventBus
 from llm.OpenAIClient import OpenAIClient
 from llm.OllamaClient import OllamaClient
 from llm.NoAIClient import NoAIClient
+from llm.PerplexityClient import PerplexityClient
+import prompt
 
 class LLMManager:
     def __init__(self, app, event_bus: EventBus):
@@ -20,6 +22,7 @@ class LLMManager:
         self.processing_thread = None
         self.stop_event = threading.Event()
         self.llm_event = threading.Event()
+        self.verbose = True
 
     def _get_backend_instance(self):
         if self.backend_type == 'none':
@@ -28,6 +31,8 @@ class LLMManager:
             return OpenAIClient()
         elif self.backend_type == 'ollama':
             return OllamaClient()
+        elif self.backend_type == 'perplexity':
+            return PerplexityClient()
         else:
             raise ValueError(f"Unsupported LLM backend type: {self.backend_type}")
 
@@ -67,6 +72,38 @@ class LLMManager:
 
             self._process_messages()
 
+    def get_completion(self, messages, model, **kwargs):
+        """Get completion from the selected AI client and return the entire response.
+
+        Args:
+            messages (list): List of messages.
+            model (str): Model for completion.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            str: The complete response from the AI client, or None if an error occurs.
+        """
+        try:
+            # Make sure the token count is within the limit
+            #messages = maintain_token_limit(messages, config.MAX_TOKENS)
+            
+            completion_stream = self.backend.stream_completion(messages, model, **kwargs)
+            
+            # Accumulate the entire response
+            full_response = ""
+            for chunk in completion_stream:
+                full_response += chunk
+
+            return full_response
+
+        except Exception as e:
+            if self.verbose:
+                import traceback
+                traceback.print_exc()
+            else:
+                print(f"An error occurred while getting completion: {e}")
+            return None
+
     def _process_messages(self) -> Optional[str]:
         """Process a list of messages and return the model's response."""
         if not self.backend:
@@ -76,13 +113,28 @@ class LLMManager:
         try:
             while not self.stop_event.is_set():
                 try:
-                    print(f"Inference queue contents: {list(self.inference_queue.queue)}")
-                    message = self.inference_queue.get(timeout=0.2)
-                    if message is None:
+                    user_message = self.inference_queue.get(timeout=0.2)
+                    if user_message is None:
                         break
+
                     start_time = time.time()
-                    print("Messages from the queue: ", message)
-                    response = self.backend.inference(messages=message)
+
+                    transcribed_message = user_message.get('transcription', "")
+                    clipboard_content = user_message.get('clipboard_content', "")
+                    messages = prompt.build_initial_messages_from_app_name(self.app_name)
+                    message_content = prompt.get_user_prompt_message_from_app_name(self.app_name)
+                    message_content = message_content.replace("{{transcription}}", transcribed_message)
+                    message_content = message_content.replace("{{clipboard_content}}", clipboard_content)
+                    new_message = {"role": "user", "content": message_content}
+                    messages.append(new_message)
+
+                    model_response = self.get_completion(messages=messages, model=self.backend.model)
+
+                    response = {
+                        "assistant": model_response,
+                        "error": None
+                    }
+
                     end_time = time.time()
                     inference_time = end_time - start_time
                     ConfigManager.log_print(

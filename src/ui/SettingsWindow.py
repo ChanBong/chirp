@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QTabWidget, QGroupBox, QGridLayout,
     QLabel, QLineEdit, QComboBox, QCheckBox, QPushButton, QFileDialog,
     QScrollArea, QToolButton, QMessageBox, QVBoxLayout, QInputDialog,
-    QSpacerItem, QSizePolicy
+    QSpacerItem, QSizePolicy, QTextEdit
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QIcon, QIntValidator, QDoubleValidator
@@ -17,7 +17,7 @@ class SettingsWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Settings")
-        self.resize(500, 500)
+        self.resize(700, 700)
         self.init_ui()
 
     def init_ui(self):
@@ -76,19 +76,10 @@ class SettingsWindow(QWidget):
 
     def add_app_sections(self, layout, app_name, app_config):
         """
-        Define the order of major sections for each app:
-         - name
-         - activation_backend_type
-         - (dynamic) activation_backends.[press_together|rapid_tap]
-         - recording_options
-         - transcription_backend_type
-         - (dynamic) transcription_backends.[selected_backend]
-         - llm_backend_type
-         - (dynamic) llm_backends.[selected_backend]
-         - output_options
+        Define the order of major sections for each app
         """
         # Define the order of sections
-        section_order = ['activation_backend_type', 'activation_backend', 'recording_options', 'transcription_backend_type', 'transcription_backend', 'llm_backend_type', 'llm_backend', 'output_options']
+        section_order = ['activation_backend_type', 'activation_backend', 'recording_options', 'transcription_backend_type', 'transcription_backend', 'llm_backend_type', 'llm_backend', 'prompts', 'output_options']
 
         # Add sections in the specified order, then any remaining sections
         for section_name in section_order:
@@ -103,6 +94,13 @@ class SettingsWindow(QWidget):
             section = ConfigManager.get_section(section_name, app_name)
             if section:
                 self.add_section(layout, app_name, {section_name: section}, section_name)
+
+        # After adding the llm_backend section, add the prompts section
+        if 'llm_backend' in section_order:
+            idx = section_order.index('llm_backend')
+            prompts_group = self.create_prompts_section(app_name)
+            if prompts_group:
+                layout.addWidget(prompts_group)
 
     def add_section(self, layout, app_name, app_config, section_name):
         section = app_config[section_name]
@@ -346,6 +344,75 @@ class SettingsWindow(QWidget):
 
     def closeEvent(self, event):
         event.accept()
+
+    def create_prompts_section(self, app_name):
+        """Create a group box for system and user prompts"""
+        group_box = QGroupBox("Prompts")
+        layout = QVBoxLayout()
+
+        # System prompt
+        system_label = QLabel("System Prompt:")
+        system_text = QTextEdit()
+        system_text.setMinimumHeight(100)
+        
+        # User prompt
+        user_label = QLabel("User Prompt:")
+        user_text = QTextEdit()
+        user_text.setMinimumHeight(100)
+
+        # Load current prompts
+        try:
+            app_system_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'apps', app_name, 'SYSTEM.txt')
+            default_system_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'apps', 'SYSTEM.txt')
+
+            app_user_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'apps', app_name, 'USER.txt')
+            default_user_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'apps', 'USER.txt')
+
+            if os.path.exists(app_system_path):
+                with open(app_system_path, 'r', encoding='utf-8') as f:
+                    system_text.setText(f.read())
+            elif os.path.exists(default_system_path):
+                with open(default_system_path, 'r', encoding='utf-8') as f:
+                    system_text.setText(f.read())
+            
+            if os.path.exists(app_user_path):
+                with open(app_user_path, 'r', encoding='utf-8') as f:
+                    user_text.setText(f.read())
+            elif os.path.exists(default_user_path):
+                with open(default_user_path, 'r', encoding='utf-8') as f:
+                    user_text.setText(f.read())
+        except Exception as e:
+            print(f"Error loading prompts: {str(e)}")
+
+        # Save button
+        save_button = QPushButton("Save Prompts")
+        
+        def save_prompts():
+            try:
+                app_dir = os.path.join('src', 'apps', app_name)
+                os.makedirs(app_dir, exist_ok=True)
+                
+                with open(os.path.join(app_dir, "SYSTEM.txt"), 'w', encoding='utf-8') as f:
+                    f.write(system_text.toPlainText())
+                
+                with open(os.path.join(app_dir, "USER.txt"), 'w', encoding='utf-8') as f:
+                    f.write(user_text.toPlainText())
+                    
+                QMessageBox.information(self, "Success", "Prompts saved successfully!")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to save prompts: {str(e)}")
+
+        save_button.clicked.connect(save_prompts)
+
+        # Add widgets to layout
+        layout.addWidget(system_label)
+        layout.addWidget(system_text)
+        layout.addWidget(user_label)
+        layout.addWidget(user_text)
+        layout.addWidget(save_button)
+
+        group_box.setLayout(layout)
+        return group_box
 
 
 class SettingWidget(QWidget):
