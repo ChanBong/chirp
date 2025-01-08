@@ -66,10 +66,11 @@ apps:
     llm_backend_type:
       value: ollama
       type: str
-      description: "The backend to use for LLM processing. Options: openai, ollama, none"
+      description: "The backend to use for LLM processing. Options: openai, ollama, perplexity, none"
       options:
         - openai
         - ollama
+        - perplexity
         - none
     llm_backend:
       type: dict
@@ -226,6 +227,19 @@ llm_backends:
       value: null
       type: str
       description: "Path to the model file. Leave empty to use online models."
+  perplexity:
+    model:
+      value: llama-3.1-sonar-small-128k-online
+      type: str
+      description: "Perplexity backend model"
+      options:
+        - llama-3.1-sonar-small-128k-online
+        - llama-3.1-sonar-large-128k-online
+        - llama-3.1-sonar-huge-128k-online
+    temperature:
+      value: 0.0
+      type: float
+      description: "Controls the randomness of the LLM output. Lower values make the output more focused and deterministic."
   none:
     value: {}
     type: dict
