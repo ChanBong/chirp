@@ -24,7 +24,6 @@ class App:
         """Initialize the Profile with name, configuration, and necessary components."""
         self.name = name
         self.config = ConfigManager.get_section('apps', name)
-        print(f"Config: {self.config}")
         self.read_from_clipboard = self.config.get('recording_options', {}).get('read_from_clipboard', False)
         self.save_output_to_clipboard = self.config.get('output_options', {}).get('save_output_to_clipboard', False)
         self.output_mode = self.config.get('output_options', {}).get('output_mode', 'text')
