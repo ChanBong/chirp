@@ -53,6 +53,7 @@ class ApplicationController:
         self.event_bus.subscribe("audio_discarded", self.handle_audio_discarded)
         self.event_bus.subscribe("recording_stopped", self.handle_recording_stopped)
         self.event_bus.subscribe("inferencing_finished", self.handle_transcription_complete)
+        self.event_bus.subscribe("inferencing_skipped", self.handle_transcription_complete)
         self.event_bus.subscribe("config_changed", self.handle_config_change)
         self.event_bus.subscribe("close_app", self.close_application)
 

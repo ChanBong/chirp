@@ -414,14 +414,12 @@ class InputManager:
             was_active = key_chord.is_valid_chord()   # only relevant for normal chords
             is_valid_chord = key_chord.update(key, event_type)
 
-            # If this was a TAP sequence, `is_valid_chord` becomes True in the same update() call
             if is_valid_chord:
-                print("is_valid_chord")
-                # We have recognized the chord (e.g. CAP_LOCK -> S)
                 self.event_bus.emit("shortcut_triggered", app_name, "press")
+                print(f"Shortcut triggered: {app_name}")
 
-                if self.backend.is_caps_lock_on():
-                    # Toggle Caps Lock off
+                if self.backend.is_caps_lock_on() and key_chord.is_tap_sequence:
+                    # Toggle the primary key if it's Caps Lock and remove the secondary key that was typed
                     self.backend.simulate_key_event("CAPS_LOCK", InputEvent.KEY_PRESS)
                     self.backend.simulate_key_event("CAPS_LOCK", InputEvent.KEY_RELEASE)
                     self.backend.simulate_key_event("BACKSPACE", InputEvent.KEY_PRESS)

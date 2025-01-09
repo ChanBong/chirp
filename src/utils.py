@@ -240,3 +240,39 @@ def add_timestamp_to_message(message_content):
     else:
         message_content += timestamp
     return message_content
+
+def is_bad_transcription(transcription: str):
+    """
+    Check if a transcription appears to be of poor quality.
+    
+    Args:
+        transcription (str): The transcription text to evaluate
+        
+    Returns:
+        bool: True if the transcription appears to be low quality, False otherwise
+    """
+    cleaned_text = transcription.strip().lower()
+    
+    if not cleaned_text:
+        return True, "Transcription is empty"
+        
+    # Check if it's just dots or other punctuation
+    if all(char in '.!?,;' for char in cleaned_text):
+        return True, "Transcription is just punctuation"
+        
+    # Check for excessive word repetition
+    words = cleaned_text.split()
+    if len(words) >= 3:
+        unique_ratio = len(set(words)) / len(words)
+        if unique_ratio < 0.4: 
+            return True, "Transcription is just filler words"
+            
+    # Check for filler words making up most of the content
+    filler_words = {'um', 'uh', 'so'}
+    word_count = len(words)
+    filler_count = sum(1 for word in words if word in filler_words)
+    if word_count > 0 and filler_count / word_count > 0.5: 
+        return True, "Transcription is just filler words"
+        
+    return False, None
+

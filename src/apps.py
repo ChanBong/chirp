@@ -7,7 +7,7 @@ from llm_manager import LLMManager
 from enums import ProfileState, RecordingMode
 from event_bus import EventBus
 from config_manager import ConfigManager
-from utils import to_clipboard, read_clipboard
+from utils import to_clipboard, read_clipboard, is_bad_transcription
 
 
 class App:
@@ -89,6 +89,16 @@ class App:
         # print(f"Current session id: {self.current_session_id}")
 
         if session_id != self.current_session_id:
+            return
+
+        if result['error']:
+            self.event_bus.emit("inferencing_skipped", self.name)
+            return
+        
+        is_bad, reason = is_bad_transcription(result['raw_text'])
+        if is_bad:
+            print(f"Skipping transcription because it is bad: {reason}")
+            self.event_bus.emit("inferencing_skipped", self.name)
             return
 
         self.current_session_id = session_id
