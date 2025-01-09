@@ -6,6 +6,7 @@ from ui.SettingsWindow import SettingsWindow
 from ui.StatusWindow import StatusWindow
 from ui.TrayIcon import TrayIcon
 from ui.ScrollWindow import ScrollableMessageDialog
+from ui.PopupWindow import TimedPopup
 from config_manager import ConfigManager
 
 
@@ -26,7 +27,7 @@ class UIManager:
         self.settings_window = SettingsWindow()
         self.status_window = StatusWindow(show_title=False)
         self.tray_icon = TrayIcon()
-
+        self.popup_window = TimedPopup()
         self.long_message_cache = None
 
         self.setup_connections()
@@ -44,6 +45,7 @@ class UIManager:
         self.event_bus.subscribe("transcription_error", self.show_error_message)
         self.event_bus.subscribe("initialization_successful", self.hide_main_window)
         self.event_bus.subscribe("show_balloon", self.show_notification)
+        self.event_bus.subscribe("show_popup", self.show_popup)
 
     def show_main_window(self):
         """Display the main application window and show the system tray icon."""
@@ -105,6 +107,11 @@ class UIManager:
                 QIcon(),
                 5000
             )
+
+    def show_popup(self, message, app_name):
+        """Display a popup message."""
+        print(f"Showing popup: {message} for app: {app_name}")
+        self.popup_window.show_popup(title=app_name, message=message)
 
     def handle_tray_message_clicked(self):
         """

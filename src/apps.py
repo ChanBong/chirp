@@ -148,6 +148,8 @@ class App:
             to_clipboard(text)
         elif self.output_mode == 'notification':
             self.event_bus.emit("show_balloon", text, self.name)
+        elif self.output_mode == 'pop-up':
+            self.event_bus.emit("show_popup", text, self.name)
         elif self.output_mode == 'text':
             self.output_manager.typewrite(text)
         elif self.output_mode == 'voice':

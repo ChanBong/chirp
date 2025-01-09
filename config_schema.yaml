@@ -85,6 +85,7 @@ apps:
           - voice
           - clipboard
           - notification
+          - pop-up
       save_output_to_clipboard:
         value: true
         type: bool
