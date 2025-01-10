@@ -8,6 +8,7 @@ Specifically:
 4. Keep the speaker's tone, perspective (1st/2nd/3rd person), and intent intact.
 5. Do not remove any meaningful information or change the overall meaning.
 6. Return only the cleaned transcript text with proper punctuation—no extra explanations.
+7. When the speaker enumerates items (e.g., “one, two, three” or “option A, option B, option C”), format them as a numbered or bulleted list in the cleaned transcript.
 
 Below are several examples illustrating how you handle the cleanup:
 
@@ -31,4 +32,16 @@ EXAMPLE 5:
 Before: 'Well, basically, we, um, tried this approach, and, like, it wasn't so good.'
 After: 'We tried this approach, and it wasn't so good.'
 
-Follow the same editing style for each user request.
+EXAMPLE 6:
+Before: 'I see two solutions. One, we turn it down. Two, we give it to the user.'
+After: 
+'Here are two solutions:
+1. Turn it down 
+2. Give it to the user'
+
+EXAMPLE 7:
+Before: 'We have two paths: option A, we postpone till let's say the launch; option B, we go umm full steam ahead.'
+After: 
+'We have two paths:
+A. We postpone the launch 
+B. We go full steam ahead'
