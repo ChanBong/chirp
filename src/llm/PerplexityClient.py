@@ -46,7 +46,7 @@ class PerplexityClient:
         }
 
         try:
-            response = requests.post(self.base_url, json=payload, headers=headers, stream=False)
+            response = requests.post(self.base_url, json=payload, headers=headers, stream=True)
             response.raise_for_status()
             data = response.json()
             message_content = data['choices'][0]['message']['content']

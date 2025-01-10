@@ -35,9 +35,10 @@ class App:
         self.state = ProfileState.IDLE
         self.transcription_manager = TranscriptionManager(self, event_bus)
         self.llm_manager = LLMManager(self, event_bus)
+        self.is_llm_streaming = self.config.get('output_options', {}).get('is_streaming', False)
         self.is_streaming = False
         self.streaming_chunk_size = self.transcription_manager.get_preferred_streaming_chunk_size()
-        self.result_handler = (StreamingResultHandler(self.output_manager) if self.is_streaming else None)
+        self.result_handler = (StreamingResultHandler(self.name, self.event_bus) if self.is_llm_streaming else None)
         self.current_session_id = None
 
         self.event_bus.subscribe("raw_transcription_result", self.handle_raw_transcription)
@@ -128,10 +129,12 @@ class App:
         if session_id != self.current_session_id:
             return
         
-        # print(f"Inferencing result: {result}")
         self.current_session_id = session_id
-        # print(f"Current session id: {self.current_session_id}") 
-        self.output(result['assistant'])
+
+        if self.is_llm_streaming:
+            self.result_handler.handle_result(result, self.output_mode)
+        else:
+            self.output(result['assistant'])
 
     def handle_inferencing_finished(self, profile_name: str):
         if profile_name == self.name:
@@ -216,33 +219,37 @@ class App:
 
 
 class StreamingResultHandler:
-    def __init__(self, output_manager):
-        self.output_manager = output_manager
+    def __init__(self, name, event_bus: EventBus):
+        self.name = name
         self.buffer = ""
-
-    def handle_result(self, result: Dict):
+        self.full_message = ""
+        self.event_bus = event_bus
+    
+    def handle_result(self, result: Dict, output_mode: str):
         new_text = result['assistant']
 
         if not new_text:
             return
+        
+        if new_text == "<end_of_stream>":
+            if output_mode == 'clipboard':
+                to_clipboard(self.full_message)
+            elif output_mode == 'notification':
+                self.event_bus.emit("show_balloon", self.full_message, self.name)
 
-        common_prefix_length = self._get_common_prefix_length(self.buffer, new_text)
-        backspace_count = len(self.buffer) - common_prefix_length
-        text_to_output = new_text[common_prefix_length:]
+            self.full_message = ""
+            self.buffer = ""
+            self.event_bus.emit("end_of_stream", self.name)
+            return
 
-        if backspace_count > 0:
-            self.output_manager.backspace(backspace_count)
-
-        if text_to_output:
-            self.output_manager.typewrite(text_to_output)
+        full_message = self.full_message + new_text
+        if output_mode == 'pop-up':
+            self.event_bus.emit("add_text_to_popup", new_text)
+        elif output_mode == 'text':
+            self.output_manager.typewrite(new_text)
+        elif output_mode == 'voice':
+            print("Support for voice output is not implemented yet. Output mode set to notification")
+            self.event_bus.emit("show_balloon", new_text, self.name)
 
         self.buffer = new_text
-
-        if result.get('is_utterance_end', False):
-            self.buffer = ""
-
-    def _get_common_prefix_length(self, s1: str, s2: str) -> int:
-        for i, (c1, c2) in enumerate(zip(s1, s2)):
-            if c1 != c2:
-                return i
-        return min(len(s1), len(s2))
+        self.full_message = full_message

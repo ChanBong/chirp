@@ -17,6 +17,8 @@ class LLMManager:
         self.event_bus = event_bus
         self.inference_queue = app.inference_queue
         self.backend_type = ConfigManager.get_value('llm_backend_type', self.app_name)
+        self.is_streaming = ConfigManager.get_value('output_options.is_streaming', self.app_name)
+        print(f"{self.app_name} is streaming: {self.is_streaming}")
         self.backend = self._get_backend_instance()
         self.current_session_id = None
         self.processing_thread = None
@@ -72,7 +74,7 @@ class LLMManager:
 
             self._process_messages()
 
-    def get_completion(self, messages, model, **kwargs):
+    def handle_non_streaming_response(self, messages, model, **kwargs):
         """Get completion from the selected AI client and return the entire response.
 
         Args:
@@ -93,6 +95,39 @@ class LLMManager:
             full_response = ""
             for chunk in completion_stream:
                 full_response += chunk
+
+            return full_response
+
+        except Exception as e:
+            if self.verbose:
+                import traceback
+                traceback.print_exc()
+            else:
+                print(f"An error occurred while getting completion: {e}")
+            return None
+
+
+    def handle_streaming_response(self, messages, model, **kwargs):
+        try:
+            completion_stream = self.backend.stream_completion(messages, model, **kwargs)
+            full_response = ""
+            
+            for chunk in completion_stream:
+                if full_response == "":
+                    self.event_bus.emit("start_of_stream", self.app_name)
+                print(f"Chunk: {chunk}")
+                full_response += chunk
+                response = {
+                    "assistant": chunk,
+                    "error": None
+                }
+                self._emit_result(response)
+
+            end_response = {
+                "assistant": "<end_of_stream>",
+                "error": None
+            }
+            self._emit_result(end_response)
 
             return full_response
 
@@ -128,7 +163,10 @@ class LLMManager:
                     new_message = {"role": "user", "content": message_content}
                     messages.append(new_message)
 
-                    model_response = self.get_completion(messages=messages, model=self.backend.model)
+                    if self.is_streaming:
+                        model_response = self.handle_streaming_response(messages=messages, model=self.backend.model)
+                    else:
+                        model_response = self.handle_non_streaming_response(messages=messages, model=self.backend.model)
 
                     response = {
                         "assistant": model_response,
@@ -140,7 +178,9 @@ class LLMManager:
                     ConfigManager.log_print(
                         f'LLM response generated in {inference_time:.2f} seconds.\n'
                         f'Response: {response}')
-                    self._emit_result(response)
+
+                    if not self.is_streaming:
+                        self._emit_result(response)
                 except queue.Empty:
                     continue
         finally:

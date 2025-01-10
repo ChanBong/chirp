@@ -45,7 +45,10 @@ class UIManager:
         self.event_bus.subscribe("transcription_error", self.show_error_message)
         self.event_bus.subscribe("initialization_successful", self.hide_main_window)
         self.event_bus.subscribe("show_balloon", self.show_notification)
-        self.event_bus.subscribe("show_popup", self.show_popup)
+        self.event_bus.subscribe("start_of_stream", self.start_of_stream)
+        self.event_bus.subscribe("add_text_to_popup", self.append_text_to_popup)
+        self.event_bus.subscribe("end_of_stream", self.end_of_stream)
+        self.event_bus.subscribe("show_popup", self.show_full_popup)
 
     def show_main_window(self):
         """Display the main application window and show the system tray icon."""
@@ -108,10 +111,27 @@ class UIManager:
                 5000
             )
 
-    def show_popup(self, message, app_name):
+    def show_full_popup(self, text, app_name):
         """Display a popup message."""
-        print(f"Showing popup: {message} for app: {app_name}")
-        self.popup_window.show_popup(title=app_name, message=message)
+        print(f"Showing popup for app: {app_name}")
+        self.popup_window.show_full_message_dialog(title=app_name, message=text)
+
+    def start_of_stream(self, app_name):
+        """Display a popup message."""
+        print(f"Starting popup for app: {app_name}")
+        self.popup_window.show_popup(title=app_name)
+
+    def append_text_to_popup(self, text):
+        """Append text to the popup message."""
+        if not text:
+            return
+
+        self.popup_window.append_text(text)
+
+    def end_of_stream(self, app_name):
+        """Hide the popup window."""
+        print(f"Hiding popup for app: {app_name}")
+        self.popup_window.on_end_of_stream()
 
     def handle_tray_message_clicked(self):
         """

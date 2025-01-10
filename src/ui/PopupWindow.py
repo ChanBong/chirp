@@ -1,46 +1,61 @@
 import sys
+import time
+import threading
+
+from PyQt6.QtCore import (
+    Qt, QTimer, QObject, pyqtSignal, QEvent
+)
+from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import (
     QApplication, QDialog, QVBoxLayout, QLabel
 )
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QGuiApplication
+
+
+class EventBus(QObject):
+    """
+    A simple event bus with PyQt signals to demonstrate streaming text.
+    """
+    start_popup = pyqtSignal(str)   # Signal to show a popup with a given title
+    append_text = pyqtSignal(str)   # Signal to append partial text to the popup
+    end_of_stream = pyqtSignal()    # Signal indicating the stream has ended
 
 
 class TimedPopup(QDialog):
+    """
+    A timed pop-up that:
+      - Appears in the top-right corner
+      - Appends streamed text incrementally
+      - Closes automatically 5s after the last text arrived, unless hovered
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
-        
-        # Make the window frameless, always on top, and allow setting opacity
-        self.setWindowFlags(
-            Qt.WindowType.FramelessWindowHint 
-            | Qt.WindowType.WindowStaysOnTopHint
-        )
-        
-        # Set 50% window opacity
-        self.setWindowOpacity(0.8)
 
-        # Use a 5-second timer to auto-close
+        # Window flags: frameless, on top, translucent
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint |
+            Qt.WindowType.WindowStaysOnTopHint
+        )
+        self.setWindowOpacity(0.8)  # 80% transparent
+
+        # 5-second auto-close timer
         self._timer = QTimer(self)
-        # TODO: get from config
-        self._timer.setInterval(5000)     # 5 seconds
+        self._timer.setInterval(5000)  # 5 seconds
         self._timer.setSingleShot(True)
         self._timer.timeout.connect(self.close)
 
-        # Layout
+        # Keep track of the current message text
+        self._current_message = ""
+
+        # Prepare layout
         layout = QVBoxLayout()
-        layout.setContentsMargins(10, 10, 10, 10)  # A bit of padding
+        layout.setContentsMargins(10, 10, 10, 10)
         self.setLayout(layout)
 
-        # Title and message labels
-        self.title_label = QLabel("Title", self)
-        self.message_label = QLabel("Message", self)
+        self.title_label = QLabel("", self)
+        self.message_label = QLabel("", self)
+        self.message_label.setWordWrap(True)       # Wrap text
+        self.message_label.setMaximumWidth(300)    # Fixed max width
 
-        # Enable word wrap and set a max width on the message
-        self.message_label.setWordWrap(True)
-        # TODO: get from config
-        self.message_label.setMaximumWidth(300)
-
-        # Set font size
         font = self.message_label.font()
         font.setPointSize(12)
         self.message_label.setFont(font)
@@ -48,10 +63,19 @@ class TimedPopup(QDialog):
         layout.addWidget(self.title_label)
         layout.addWidget(self.message_label)
 
-        # Enable mouse tracking to detect enter/leave events
+        # Hover detection
         self.setMouseTracking(True)
 
-    def show_popup(self, title: str, message: str):
+    def subscribe_to_event_bus(self, event_bus: EventBus):
+        """
+        Connect this pop-up’s methods to the event bus signals.
+        """
+        event_bus.start_popup.connect(self.show_popup)
+        event_bus.append_text.connect(self.append_text)
+        event_bus.end_of_stream.connect(self.on_end_of_stream)
+
+
+    def show_full_message_dialog(self, title: str, message: str):
         """
         Show the pop-up with the given title and message.
         Positions it in the top-right corner of the primary screen.
@@ -72,31 +96,112 @@ class TimedPopup(QDialog):
         self._timer.start()
         self.show()
 
-    def enterEvent(self, event):
+
+    def show_popup(self, title: str):
+        """
+        Show the pop-up with an initial title. Message starts empty or minimal.
+        """
+        self.title_label.setText(f"<b>{title}</b>")
+        self._current_message = ""
+        self.message_label.setText("")
+        
+        # Size to fit (initially)
+        self.adjustSize()
+
+        # Position in the top-right corner of the primary screen
+        screen_geom = QGuiApplication.primaryScreen().geometry()
+        x = screen_geom.right() - self.width() - 10
+        y = screen_geom.top() + 10
+        self.move(x, y)
+
+        # (Re)start the timer so it closes if no text arrives after 5s
+        # - You can decide if you want it to close if no text is arriving
+        #   or if you'd prefer to wait until end_of_stream is called.
+        self._timer.start()
+
+        self.show()
+
+    def append_text(self, text_chunk: str):
+        """
+        Add new text to the message label, keep the pop-up open.
+        """
+        # Stop the timer if it's running, because new text arrived
+        self._timer.stop()
+
+        # Append the text to the current message
+        self._current_message += text_chunk
+        self.message_label.setText(self._current_message)
+
+        # Adjust the size again if the text has grown
+        self.adjustSize()
+
+        # Reposition if needed (since size might have changed)
+        screen_geom = QGuiApplication.primaryScreen().geometry()
+        x = screen_geom.right() - self.width() - 10
+        y = screen_geom.top() + 10
+        self.move(x, y)
+
+    def on_end_of_stream(self):
+        """
+        Once the stream has ended, we know no more text is coming.
+        So we can start the auto-close countdown.
+        """
+        self._timer.start()
+
+    def enterEvent(self, event: QEvent):
         """
         Stop the auto-close timer when the mouse enters the pop-up.
         """
         self._timer.stop()
         super().enterEvent(event)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, event: QEvent):
         """
         Restart the auto-close timer when the mouse leaves the pop-up.
         """
+        # Only restart if the stream is already ended or the pop-up is in final state.
+        # Otherwise, you could keep stopping it upon each text chunk. 
         self._timer.start()
         super().leaveEvent(event)
+
+
+def simulate_stream(event_bus: EventBus):
+    """
+    A mock function that simulates streaming of text.
+    For a real application, this might be some async generator or
+    data read from a socket, etc.
+    """
+    # Signal to show popup first
+    event_bus.start_popup.emit("Streaming Title")
+
+    # Send partial text in chunks
+    chunks = [
+        "Hello, this is the first part. ",
+        "Now adding the second part. ",
+        "And here's more text coming in... ",
+        "Final line. "
+    ]
+    
+    for c in chunks:
+        time.sleep(1)  # simulate delay between chunks
+        event_bus.append_text.emit(c)
+
+    # Indicate end of stream
+    event_bus.end_of_stream.emit()
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
+    # Create our event bus
+    bus = EventBus()
+
+    # Create the TimedPopup and subscribe it to the bus
     popup = TimedPopup()
+    popup.subscribe_to_event_bus(bus)
 
-    lorem_ipsum = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-
-    popup.show_popup(
-        title="vanilla", 
-        message=lorem_ipsum
-    )
+    # Start a background thread to simulate streaming
+    thread = threading.Thread(target=simulate_stream, args=(bus,), daemon=True)
+    thread.start()
 
     sys.exit(app.exec())

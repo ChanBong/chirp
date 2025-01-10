@@ -86,6 +86,10 @@ apps:
           - clipboard
           - notification
           - pop-up
+      is_streaming:
+        value: false
+        type: bool
+        description: Whether to stream the output.
       save_output_to_clipboard:
         value: true
         type: bool

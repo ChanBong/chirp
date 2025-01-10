@@ -89,7 +89,7 @@ class FasterWhisperBackend(TranscriptionBackendBase):
                 initial_prompt=self.config.get('initial_prompt'),
                 condition_on_previous_text=self.config.get('condition_on_previous_text', True),
                 temperature=self.config.get('temperature', 0.0),
-                vad_filter=self.config.get('vad_filter', False),
+                vad_filter=self.config.get('vad_filter', True),
             )
 
             transcription = ''.join([segment.text for segment in segments])
