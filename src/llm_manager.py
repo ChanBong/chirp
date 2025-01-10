@@ -32,7 +32,7 @@ class LLMManager:
         elif self.backend_type == 'openai':
             return OpenAIClient()
         elif self.backend_type == 'ollama':
-            return OllamaClient()
+            return OllamaClient(keep_alive=ConfigManager.get_value('llm_backend.keep_alive', self.app_name))
         elif self.backend_type == 'perplexity':
             return PerplexityClient()
         else:
@@ -114,8 +114,11 @@ class LLMManager:
             
             for chunk in completion_stream:
                 if full_response == "":
-                    self.event_bus.emit("start_of_stream", self.app_name)
-                print(f"Chunk: {chunk}")
+                    start_response = {
+                        "assistant": "<start_of_stream>",
+                        "error": None
+                    }
+                    self._emit_result(start_response)
                 full_response += chunk
                 response = {
                     "assistant": chunk,

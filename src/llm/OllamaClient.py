@@ -9,11 +9,13 @@ from termcolor import colored
 
 class OllamaClient:
     """Class to handle Ollama API calls."""
-    def __init__(self, model: str = "llama3.2:latest", base_url: str = "http://localhost:11434"):
+    def __init__(self, model: str = "llama3.2:latest", base_url: str = "http://localhost:11434", keep_alive: str = "5m"):
         self.model = model
         self.base_url = base_url.rstrip('/')
         self._initialized = False
         self.verbose = True
+        self.keep_alive = keep_alive
+        print(f"OllamaClient initialized with keep_alive: {self.keep_alive}")
 
     def is_initialized(self) -> bool:
         return self._initialized
@@ -50,9 +52,8 @@ class OllamaClient:
             "model": model,
             "messages": messages,
             "stream": True,
-            "keep_alive": 600,
+            "keep_alive": self.__fix_keep_alive(self.keep_alive),
             **kwargs
-
         }
         json_data = json.dumps(data)
         # headers = {'Authorization': f'Bearer {self.api_key}'} if self.api_key else {}
@@ -75,6 +76,18 @@ class OllamaClient:
             else:
                 print(f"An error occurred streaming completion from Ollama API: {e}")
             raise RuntimeError(f"An error occurred streaming completion from Ollama API: {e}")
+        
+    def __fix_keep_alive(self, keep_alive):
+        """ Attempts to fix the keep_alive value if it is not a valid string. Returns -1 as a fallback. """
+        try:
+            return int(keep_alive)
+        except ValueError:
+            pattern = r"^-?\d+[smh]$"
+            if re.match(pattern, keep_alive) is not None:
+                return keep_alive
+            print(f"Invalid OLLAMA_KEEP_ALIVE value: {keep_alive}. Must be a number followed by s, m, or h.")
+            return -1
+
 
     def cleanup(self):
         self.model = None

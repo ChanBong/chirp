@@ -38,7 +38,7 @@ class App:
         self.is_llm_streaming = self.config.get('output_options', {}).get('is_streaming', False)
         self.is_streaming = False
         self.streaming_chunk_size = self.transcription_manager.get_preferred_streaming_chunk_size()
-        self.result_handler = (StreamingResultHandler(self.name, self.event_bus) if self.is_llm_streaming else None)
+        self.result_handler = (StreamingResultHandler(self.name, self.event_bus, self.output_manager) if self.is_llm_streaming else None)
         self.current_session_id = None
 
         self.event_bus.subscribe("raw_transcription_result", self.handle_raw_transcription)
@@ -92,11 +92,13 @@ class App:
             return
 
         if result['error']:
+            self.finish_inferencing()
             self.event_bus.emit("inferencing_skipped", self.name)
             return
         
         is_bad, reason = is_bad_transcription(result['raw_text'])
         if is_bad:
+            self.finish_inferencing()
             print(f"Skipping transcription because it is bad: {reason}")
             self.event_bus.emit("inferencing_skipped", self.name)
             return
@@ -219,16 +221,22 @@ class App:
 
 
 class StreamingResultHandler:
-    def __init__(self, name, event_bus: EventBus):
+    def __init__(self, name, event_bus: EventBus, output_manager: OutputManager):
         self.name = name
         self.buffer = ""
         self.full_message = ""
+        self.output_manager = output_manager
         self.event_bus = event_bus
     
     def handle_result(self, result: Dict, output_mode: str):
         new_text = result['assistant']
 
         if not new_text:
+            return
+        
+        if new_text == "<start_of_stream>":
+            if output_mode == 'pop-up':
+                self.event_bus.emit("start_of_stream", self.name)
             return
         
         if new_text == "<end_of_stream>":

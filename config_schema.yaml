@@ -228,10 +228,10 @@ llm_backends:
       value: 0.0
       type: float
       description: "Controls the randomness of the LLM output. Lower values make the output more focused and deterministic."
-    ModelFile:
-      value: null
+    keep_alive:
+      value: 5m
       type: str
-      description: "Path to the model file. Leave empty to use online models."
+      description: "The duration that models stay loaded in memory. Examples: '20m', '24h'. Set to '-1' to keep models loaded indefinitely. I suggest to keep the LLM alive indefinitely only if you are using the same LLM across multiple apps."
   perplexity:
     model:
       value: llama-3.1-sonar-small-128k-online
