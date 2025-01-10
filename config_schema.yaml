@@ -120,20 +120,18 @@ transcription_backends:
         - large-v2
         - large-v3
     compute_type:
-      value: default
+      value: float16
       type: str
       description: "The compute type to use for the local Whisper model."
       options:
-        - default
         - float32
         - float16
         - int8
     device:
-      value: auto
+      value: cuda
       type: str
-      description: "The device to run the local Whisper model on. Use 'cuda' for NVIDIA GPUs, 'cpu' for CPU-only processing, or 'auto' to let the system automatically choose the best available device."
+      description: "The device to run the local Whisper model on. Use 'cuda' for NVIDIA GPUs, 'cpu' for CPU-only processing"
       options:
-        - auto
         - cuda
         - cpu
     condition_on_previous_text:
