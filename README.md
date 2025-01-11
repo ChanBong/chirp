@@ -1,5 +1,5 @@
 
-# Chirp 🐤
+# <img src="./assets/chirp_logo.png" alt="Chirp icon" width="25" height="25"> Chirp
 ![version](https://img.shields.io/badge/version-1.0-blue)
 
 <p align="center">
