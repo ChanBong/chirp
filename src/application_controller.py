@@ -99,7 +99,7 @@ class ApplicationController:
         """Handle cases where recorded audio is discarded."""
         app = self._get_app_for_session(session_id)
         if app:
-            app.finish_transcription()  # This will emit "transcription_complete" event
+            app.finish_inferencing()  # This will emit "inferencing_complete" event
 
     def handle_transcription_complete(self, session_id: str):
         """Handle the completion of a transcription session."""

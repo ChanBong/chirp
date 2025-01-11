@@ -158,12 +158,11 @@ python run.py
 -  You can also check for any GPU related issues. So if your model is not being loaded in the GPU or fast service for is not using GPU, there is troubleshooting code that you can use. Also, you can set verbose equals to true in the settings to get verbose output to your terminal. And you can hit debug audio saving checkbox to save the audio for later debugging.
 ## Future
 
+### Are you a Whisper ninja ?
+
+
 ### Are you a UI guy ?
 Help me design a better UI 
-Help me design a better UI 
-
-Help me design a better UI
-
 ### Do you have a cracked local-first perplexity like implementation
 Please drop a message
 ### Can you write hardware plugins
