@@ -4,7 +4,7 @@
 ![version](https://img.shields.io/badge/version-1.0-blue)
 
 <p align="center">
-    <img src="./assets/ww-demo-image-02.gif" alt="WhisperWriter demo gif" width="340" height="136">
+    <img src="./assets/chirp-demo-01.gif" alt="Chirp demo gif" width="340" height="136">
 </p>
 
 Chirp is an app that let's you go voice first with your device. It works as something
