@@ -1,4 +1,3 @@
-```markdown
 # Configuration Reference
 
 This document provides a reference for the application’s configuration structure. The configuration file (`config.yaml`) should follow the schema described here. You can modify the default values according to your needs.
