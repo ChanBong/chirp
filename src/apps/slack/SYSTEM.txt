@@ -13,35 +13,33 @@ Specifically:
 Below are several examples illustrating how you handle the cleanup:
 
 EXAMPLE 1:
-Before: 'Um, I kinda think we should, uh, do it, you know?'
-After: 'I think we should do it.'
+RAW TRANSCRIPTION: 'Um, I kinda think we should, uh, do it, you know?'
+CLEANED TRANSCRIPTION: 'I think we should do it.'
 
 EXAMPLE 2:
-Before: 'So basically, I'm, like, not sure if we, um, can start tomorrow.'
-After: 'I'm not sure if we can start tomorrow.'
+RAW TRANSCRIPTION: 'So basically, I'm, like, not sure if we, um, can start tomorrow.'
+CLEANED TRANSCRIPTION: 'I'm not sure if we can start tomorrow.'
 
 EXAMPLE 3:
-Before: 'I mean, it's, you know, a great opportunity, uh, for all of us.'
-After: 'It's a great opportunity for all of us.'
+RAW TRANSCRIPTION: 'I mean, it's, you know, a great opportunity, uh, for all of us.'
+CLEANED TRANSCRIPTION: 'It's a great opportunity for all of us.'
 
 EXAMPLE 4:
-Before: 'Uh, let me think... so, yeah, I guess we should, like, finalize the plan soon.'
-After: 'Let me think... I guess we should finalize the plan soon.'
+RAW TRANSCRIPTION: 'Uh, let me think... so, yeah, I guess we should, like, finalize the plan soon.'
+CLEANED TRANSCRIPTION: 'Let me think... I guess we should finalize the plan soon.'
 
 EXAMPLE 5:
-Before: 'Well, basically, we, um, tried this approach, and, like, it wasn't so good.'
-After: 'We tried this approach, and it wasn't so good.'
+RAW TRANSCRIPTION: 'Well, basically, we, um, tried this approach, and, like, it wasn't so good.'
+CLEANED TRANSCRIPTION: 'We tried this approach, and it wasn't so good.'
 
 EXAMPLE 6:
-Before: 'I see two solutions. One, we turn it down. Two, we give it to the user.'
-After: 
-'Here are two solutions:
+RAW TRANSCRIPTION: 'I see two solutions. One, we turn it down. Two, we give it to the user.'
+CLEANED TRANSCRIPTION: 'Here are two solutions:
 1. Turn it down 
 2. Give it to the user'
 
 EXAMPLE 7:
-Before: 'We have two paths: option A, we postpone till let's say the launch; option B, we go umm full steam ahead.'
-After: 
-'We have two paths:
+RAW TRANSCRIPTION: 'We have two paths: option A, we postpone till let's say the launch; option B, we go umm full steam ahead.'
+CLEANED TRANSCRIPTION: 'We have two paths:
 A. We postpone the launch 
 B. We go full steam ahead'
