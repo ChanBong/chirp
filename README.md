@@ -3,22 +3,23 @@
 ![version](https://img.shields.io/badge/version-1.0-blue)
 
 <p align="center">
-
     <img src="./assets/chirp-demo-01.gif" alt="Chirp demo 01" width="340" height="136">
-
 </p>
 
-  
 Chirp is an app that let's you go voice first with your device. It works as something
-## Key Features
 
+## Key Features
 - **Customizable backends** : chirp has support for major api-based and local inferencing frameworks. To switch is as simple as changing the settings in UI
 
-- <demo></demo>
+<p align="center">
+    <img src="./assets/customizable-backends.png" alt="Customizable backends" width="880" height="540">
+</p>
 
 - **Various output modes** : You can get output from the app in any form you like, from direct text on the cursor position to voice directed to any speaker
 
-- <demo></demo>
+<p align="center">
+    <img src="./assets/output-modes.png" alt="Output modes" width="880" height="540">
+</p>
 
 ## Philosophy
 
@@ -30,9 +31,8 @@ Chirp is an app that let's you go voice first with your device. It works as some
 - file over app
 - plugins are king
 - potential with output modality is unlimited (think home assistants, browser control)
-## Getting Started
 
-  
+## Getting Started  
 
 ### Prerequisites
 
@@ -49,70 +49,44 @@ For local LLM inference, we use [Ollama](https://github.com/ollama/ollama). Down
 <details>
 
 <summary>More information on GPU execution</summary>
-
-  
-
 The below was taken directly from the [`faster-whisper` README](https://github.com/SYSTRAN/faster-whisper?tab=readme-ov-file#gpu):
-
-  
 
 **Note:** The latest versions of `ctranslate2` support CUDA 12 only. For CUDA 11, the current workaround is downgrading to the `3.24.0` version of `ctranslate2` (This can be done with `pip install --force-reinsall ctranslate2==3.24.0`).
 
-  
-
 There are multiple ways to install the NVIDIA libraries mentioned above. The recommended way is described in the official NVIDIA documentation, but we also suggest other installation methods below.
-
-  
 
 #### Use Docker
 
-  
-
 The libraries (cuBLAS, cuDNN) are installed in these official NVIDIA CUDA Docker images: `nvidia/cuda:12.0.0-runtime-ubuntu20.04` or `nvidia/cuda:12.0.0-runtime-ubuntu22.04`.
 
-  
-
-#### Install with `pip` (Linux only)
-
-  
+#### Install with `pip` (Linux only)  
 
 On Linux these libraries can be installed with `pip`. Note that `LD_LIBRARY_PATH` must be set before launching Python.
 
-  
-
 ```bash
-
 pip install nvidia-cublas-cu12 nvidia-cudnn-cu12
-
-  
-
 export LD_LIBRARY_PATH=`python3 -c 'import os; import nvidia.cublas.lib; import nvidia.cudnn.lib; print(os.path.dirname(nvidia.cublas.lib.__file__) + ":" + os.path.dirname(nvidia.cudnn.lib.__file__))'`
-
 ```
-
-  
 
 **Note**: Version 9+ of `nvidia-cudnn-cu12` appears to cause issues due its reliance on cuDNN 9 (Faster-Whisper does not currently support cuDNN 9). Ensure your version of the Python package is for cuDNN 8.
 
-  
-
 #### Download the libraries from Purfview's repository (Windows & Linux)
 
-  
-
 Purfview's [whisper-standalone-win](https://github.com/Purfview/whisper-standalone-win) provides the required NVIDIA libraries for Windows & Linux in a [single archive](https://github.com/Purfview/whisper-standalone-win/releases/tag/libs). Decompress the archive and place the libraries in a directory included in the `PATH`.
-
-  
 
 </details>
 
 ### Installation
+
 #### 1. Clone the repository:
+
 ```bash
 git clone https://github.com/dariox1337/whisper-writer
 cd whisper-writer
 ```
+
 #### 2. Create a virtual environment and activate it:
+
 ```bash
 python -m venv venv
 
@@ -122,8 +96,11 @@ source venv/bin/activate
 # For Windows:
 venv\Scripts\activate
 ```
+
 #### 3. Install the required packages:
+
 Base packages:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -140,17 +117,21 @@ pip install openai==1.44.1
 # For local VOSK models
 pip install vosk==0.3.45
 ```
+
 #### 4. Run:
 
 ```
 python run.py
 ```
-## Customization 
-## Customization 
 
-## Customization
+## Customization 
 
 - This [file]() goes through all the customization options, I've also tried to make the UI super intuitive so you can click on any specific option that you don't know in this channel and read the helpful message.
+
+<p align="center">
+    <img src="./assets/customization-options.png" alt="Customization options" width="880" height="540">
+</p>
+
 ## Troubleshooting
 
 -  This should redirect to troubleshooting.md and I have included what to do in case of frequently Ask questions.
