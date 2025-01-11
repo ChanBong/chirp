@@ -19,7 +19,6 @@ class OutputManager:
 
     def typewrite(self, text):
         """Simulate typing using pynput."""
-        print(f"Typing: {text}")
         for char in text:
             if char == '\n':
                 self.keyboard.press(Key.enter)
