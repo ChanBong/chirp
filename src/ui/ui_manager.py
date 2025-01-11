@@ -41,7 +41,7 @@ class UIManager:
         self.tray_icon.close_app.connect(self.initiate_close)
         self.tray_icon.message_clicked.connect(self.handle_tray_message_clicked)
         self.event_bus.subscribe("quit_application", self.quit_application)
-        self.event_bus.subscribe("profile_state_change", self.handle_profile_state_change)
+        self.event_bus.subscribe("app_state_change", self.handle_app_state_change)
         self.event_bus.subscribe("transcription_error", self.show_error_message)
         self.event_bus.subscribe("initialization_successful", self.hide_main_window)
         self.event_bus.subscribe("show_balloon", self.show_notification)
@@ -63,8 +63,8 @@ class UIManager:
         """Hide the main window after successful initialization."""
         self.main_window.hide_main_window()
 
-    def handle_profile_state_change(self, message):
-        """Handle changes in profile states, updating status based on the chosen mode."""
+    def handle_app_state_change(self, message):
+        """Handle changes in app states, updating status based on the chosen mode."""
         ConfigManager.log_print(message)
         self.status_update_mode = "Window"
         if self.status_update_mode == "Window":

@@ -34,7 +34,7 @@ class SettingsWindow(QWidget):
         global_tab = self.create_global_tab()
         self.tabs.addTab(global_tab, "Global Options")
 
-        # Profile tabs
+        # App tabs
         apps = ConfigManager.get_apps()
         for app in apps:
             app_name = app['name']
@@ -139,12 +139,12 @@ class SettingsWindow(QWidget):
         delete_button.clicked.connect(lambda: self.delete_app(app_name))
         layout.addWidget(delete_button)
 
-        rename_button = QPushButton("Rename Profile")
+        rename_button = QPushButton("Rename App")
         rename_button.clicked.connect(lambda: self.rename_app(app_name))
         layout.addWidget(rename_button)
 
     def rename_app(self, old_name):
-        new_name, ok = QInputDialog.getText(self, 'Rename Profile', 'Enter new app name:')
+        new_name, ok = QInputDialog.getText(self, 'Rename App', 'Enter new app name:')
         if ok and new_name:
             if ConfigManager.rename_app(old_name, new_name):
                 # Update tab name
@@ -163,8 +163,8 @@ class SettingsWindow(QWidget):
 
                 # Inform user of successful rename
                 QMessageBox.information(self,
-                                        'Profile Renamed',
-                                        f'Profile "{old_name}" has been renamed to "{new_name}".')
+                                        'App Renamed',
+                                        f'App "{old_name}" has been renamed to "{new_name}".')
             else:
                 QMessageBox.warning(self,
                                     'Rename Failed',
@@ -261,12 +261,12 @@ class SettingsWindow(QWidget):
         return widget
 
     def create_add_app_button(self):
-        button = QPushButton("Add Profile")
+        button = QPushButton("Add App")
         button.clicked.connect(self.add_app)
         return button
 
     def add_app(self):
-        new_app = ConfigManager.create_app("New Profile")
+        new_app = ConfigManager.create_app("New App")
         app_name = new_app['name']
         app_tab = self.create_app_tab(app_name)
         self.tabs.addTab(app_tab, app_name)
@@ -277,11 +277,11 @@ class SettingsWindow(QWidget):
 
     def delete_app(self, app_name):
         if self.tabs.count() <= 2:  # 1 for global options, 1 for the last app
-            QMessageBox.warning(self, 'Cannot Delete Profile',
+            QMessageBox.warning(self, 'Cannot Delete App',
                                 'You cannot delete the last remaining app.')
             return
 
-        reply = QMessageBox.question(self, 'Delete Profile',
+        reply = QMessageBox.question(self, 'Delete App',
                                      f"Delete the app '{app_name}'?",
                                      QMessageBox.StandardButton.Yes |
                                      QMessageBox.StandardButton.No,
@@ -293,10 +293,10 @@ class SettingsWindow(QWidget):
                         self.tabs.removeTab(i)
                         break
                 self.update_active_apps_widget()
-                QMessageBox.information(self, 'Profile Deleted',
-                                        f'Profile "{app_name}" has been deleted.')
+                QMessageBox.information(self, 'App Deleted',
+                                        f'App "{app_name}" has been deleted.')
             else:
-                QMessageBox.warning(self, 'Cannot Delete Profile',
+                QMessageBox.warning(self, 'Cannot Delete App',
                                     'The app could not be deleted. '
                                     'It may be the last remaining app.')
 

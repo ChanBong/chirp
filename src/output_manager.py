@@ -12,9 +12,9 @@ from event_bus import EventBus
 
 class OutputManager:
     """A class to simulate keyboard output using various methods."""
-    def __init__(self, profile_name: str, event_bus: EventBus):
+    def __init__(self, app_name: str, event_bus: EventBus):
         """Initialize the OutputManager with the specified configuration."""
-        self.interval = ConfigManager.get_value('output_options.writing_key_press_delay', profile_name)
+        self.interval = ConfigManager.get_value('output_options.writing_key_press_delay', app_name)
         self.keyboard = PynputController()
 
     def typewrite(self, text):

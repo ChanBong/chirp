@@ -348,11 +348,11 @@ class InputManager:
 
     def load_shortcuts(self):
         """Load shortcuts from config, supporting both traditional shortcuts and tap sequences."""
-        active_profiles = ConfigManager.get_apps(active_only=True)
-        for profile in active_profiles:
-            profile_name = profile['name']
-            activation_backend_type = ConfigManager.get_value('activation_backend_type', profile_name)
-            activation_backend = ConfigManager.get_value('activation_backend', profile_name)
+        active_apps = ConfigManager.get_apps(active_only=True)
+        for app in active_apps:
+            app_name = app['name']
+            activation_backend_type = ConfigManager.get_value('activation_backend_type', app_name)
+            activation_backend = ConfigManager.get_value('activation_backend', app_name)
             if activation_backend_type == 'press_together':
                 shortcut = activation_backend['hotkey']
             elif activation_backend_type == 'rapid_tap':
@@ -361,7 +361,7 @@ class InputManager:
                 raise ValueError(f"Unsupported activation backend type: {activation_backend_type}")
             keys = self.parse_key_combination(shortcut)
             is_tap_sequence = isinstance(shortcut, str) and shortcut.upper().startswith('TAP:')
-            self.shortcuts[profile_name] = KeyChord(keys, is_tap_sequence=is_tap_sequence)
+            self.shortcuts[app_name] = KeyChord(keys, is_tap_sequence=is_tap_sequence)
 
     def start(self):
         self.backend.start()
