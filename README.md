@@ -141,7 +141,7 @@ python run.py
 ## Future
 
 ### Are you a Whisper ninja ?
-Help me add various enhancements like AdWords to dictionary better proper noun detection and other stuff
+Help me add various enhancements like add words to dictionary, better proper noun detection and other stuff
 
 ### Are you a UI guy ?
 Help me design a better UI 
