@@ -156,14 +156,17 @@ python run.py
 -  This should redirect to troubleshooting.md and I have included what to do in case of frequently Ask questions.
 -  So, if the check if Ollama is running, check your config.yaml
 -  You can also check for any GPU related issues. So if your model is not being loaded in the GPU or fast service for is not using GPU, there is troubleshooting code that you can use. Also, you can set verbose equals to true in the settings to get verbose output to your terminal. And you can hit debug audio saving checkbox to save the audio for later debugging.
+
 ## Future
 
 ### Are you a Whisper ninja ?
-
+Help me add various enhancements like AdWords to dictionary better proper noun detection and other stuff
 
 ### Are you a UI guy ?
 Help me design a better UI 
-### Do you have a cracked local-first perplexity like implementation
-Please drop a message
-### Can you write hardware plugins
+
+### Do you have a cracked local-first perplexity like implementation ?
+Please drop a message. I'll be happy to integrate it.
+
+### Can you write hardware plugins ?
 I am planning to use this as a backed for a wearable (could be anything), will be fun to build together

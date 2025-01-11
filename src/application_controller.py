@@ -131,7 +131,7 @@ class ApplicationController:
 
     def run(self):
         """Run the main application loop and return the exit code."""
-        start_minimized = ConfigManager.get_value('misc.start_minimized')
+        start_minimized = ConfigManager.get_value('global_options.start_minimized')
         if start_minimized:
             self.event_bus.emit("start_listening")
         else:
