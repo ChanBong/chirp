@@ -81,7 +81,7 @@ class ApplicationController:
             app.start_transcription(session_id)
             self.manually_stopped_apps.discard(app.name)
         else:
-            ConfigManager.log_print("Profile or audio thread is busy.")
+            ConfigManager.log_print("App or audio thread is busy.")
 
     def stop_recording(self, app: App):
         """Stop recording for a given app."""
@@ -123,7 +123,7 @@ class ApplicationController:
         self.start_core_components()
 
     def handle_config_change(self):
-        """Handle configuration changes by reloading profiles and restarting components."""
+        """Handle configuration changes by reloading apps and restarting components."""
         self.cleanup()
         self.load_active_apps()
         if self.listening:
@@ -200,11 +200,11 @@ class ApplicationController:
         for session_id in list(self.session_app_map.keys()):
             self.handle_transcription_complete(session_id)
 
-        # Stop and cleanup all active profiles
+        # Stop and cleanup all active apps
         for app in self.active_apps.values():
             app.cleanup()
 
-        # Clear the active profiles and session profile map
+        # Clear the active apps and session app map
         self.active_apps.clear()
         self.session_app_map.clear()
 

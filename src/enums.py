@@ -8,7 +8,7 @@ class RecordingMode(Enum):
     HOLD_TO_RECORD = 4
 
 
-class ProfileState(Enum):
+class AppState(Enum):
     IDLE = 0
     RECORDING = 1
     TRANSCRIBING = 2

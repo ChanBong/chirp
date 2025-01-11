@@ -4,7 +4,7 @@ from typing import Dict
 from output_manager import OutputManager
 from transcription_manager import TranscriptionManager
 from llm_manager import LLMManager
-from enums import ProfileState, RecordingMode
+from enums import AppState, RecordingMode
 from event_bus import EventBus
 from config_manager import ConfigManager
 from utils import to_clipboard, read_clipboard, is_bad_transcription
@@ -12,7 +12,7 @@ from utils import to_clipboard, read_clipboard, is_bad_transcription
 
 class App:
     """
-    Encapsulates the configuration, state, and behavior of a specific transcription profile.
+    Encapsulates the configuration, state, and behavior of a specific transcription app.
 
     Manages the lifecycle of transcription sessions, including recording, processing,
     and output of transcribed text. Coordinates interactions between TranscriptionManager,
@@ -21,7 +21,7 @@ class App:
     transcription events.
     """
     def __init__(self, name: str, event_bus: EventBus):
-        """Initialize the Profile with name, configuration, and necessary components."""
+        """Initialize the App with name, configuration, and necessary components."""
         self.name = name
         self.config = ConfigManager.get_section('apps', name)
         self.read_from_clipboard = self.config.get('recording_options', {}).get('read_from_clipboard', False)
@@ -32,7 +32,7 @@ class App:
         self.inference_queue = Queue()
         self.output_manager = OutputManager(name, event_bus)
         self.recording_mode = RecordingMode.PRESS_TO_TOGGLE
-        self.state = ProfileState.IDLE
+        self.state = AppState.IDLE
         self.transcription_manager = TranscriptionManager(self, event_bus)
         self.llm_manager = LLMManager(self, event_bus)
         self.is_llm_streaming = self.config.get('output_options', {}).get('is_streaming', False)
@@ -47,28 +47,28 @@ class App:
         self.event_bus.subscribe("inferencing_finished", self.handle_inferencing_finished)
 
     def start_transcription(self, session_id: str):
-        """Start the transcription process for this profile."""
+        """Start the transcription process for this app."""
         self.current_session_id = session_id
-        self.state = ProfileState.RECORDING
-        self.event_bus.emit("profile_state_change", f"({self.name}) "
+        self.state = AppState.RECORDING
+        self.event_bus.emit("app_state_change", f"({self.name}) "
                             f"{'Streaming' if self.is_streaming else 'Recording'}...")
         print(f"Starting transcription for session {self.current_session_id}")
         self.transcription_manager.start_transcription(session_id)
 
     def recording_stopped(self):
         """Transition to transcribing state since recording has stopped."""
-        if self.state == ProfileState.RECORDING:
-            self.event_bus.emit("profile_state_change", f"({self.name}) Transcribing...")
-            self.state = ProfileState.TRANSCRIBING
+        if self.state == AppState.RECORDING:
+            self.event_bus.emit("app_state_change", f"({self.name}) Transcribing...")
+            self.state = AppState.TRANSCRIBING
             print(f"Recording stopped for session {self.current_session_id}")
         else:
             print(f"Recording stopped for session {self.current_session_id}")
 
     def is_recording(self) -> bool:
-        return self.state == ProfileState.RECORDING
+        return self.state == AppState.RECORDING
 
     def is_idle(self) -> bool:
-        return self.state == ProfileState.IDLE
+        return self.state == AppState.IDLE
 
     def finish_transcription(self):
         """Finish the transcription process and return to idle state."""
@@ -104,8 +104,8 @@ class App:
             return
 
         self.current_session_id = session_id
-        self.state = ProfileState.INFERENCING
-        self.event_bus.emit("profile_state_change", f"({self.name}) Inferring...")
+        self.state = AppState.INFERENCING
+        self.event_bus.emit("app_state_change", f"({self.name}) Inferring...")
 
         clipboard = read_clipboard()
         clipboard_content = ""
@@ -121,8 +121,8 @@ class App:
         self.llm_manager.inference_queue.put(None)
         self.llm_manager.start_inference(session_id)
 
-    def handle_transcription_finished(self, profile_name: str):
-        if profile_name == self.name:
+    def handle_transcription_finished(self, app_name: str):
+        if app_name == self.name:
             self.finish_transcription()
 
     def handle_inferencing_result(self, result: Dict, session_id: str):
@@ -138,18 +138,18 @@ class App:
         else:
             self.output(result['assistant'])
 
-    def handle_inferencing_finished(self, profile_name: str):
-        if profile_name == self.name:
+    def handle_inferencing_finished(self, app_name: str):
+        if app_name == self.name:
             self.finish_inferencing()
 
     def finish_inferencing(self):
         previous_state = self.state
-        self.state = ProfileState.IDLE
-        self.event_bus.emit("profile_state_change", '')
+        self.state = AppState.IDLE
+        self.event_bus.emit("app_state_change", '')
 
         old_sid = self.current_session_id
         self.current_session_id = None
-        if previous_state in [ProfileState.INFERENCING, ProfileState.RECORDING, ProfileState.TRANSCRIBING]:
+        if previous_state in [AppState.INFERENCING, AppState.RECORDING, AppState.TRANSCRIBING]:
             self.event_bus.emit("inferencing_complete", old_sid)
 
     def output(self, text: str):
@@ -175,11 +175,11 @@ class App:
 
     def should_start_on_press(self) -> bool:
         """Determine if recording should start on key press."""
-        return self.state == ProfileState.IDLE
+        return self.state == AppState.IDLE
 
     def should_stop_on_press(self) -> bool:
         """Determine if recording should stop on key press."""
-        return (self.state == ProfileState.RECORDING and
+        return (self.state == AppState.RECORDING and
                 self.recording_mode in [
                     RecordingMode.PRESS_TO_TOGGLE,
                     RecordingMode.CONTINUOUS,
@@ -188,7 +188,7 @@ class App:
 
     def should_stop_on_release(self) -> bool:
         """Determine if recording should stop on key release."""
-        return (self.state == ProfileState.RECORDING and
+        return (self.state == AppState.RECORDING and
                 self.recording_mode == RecordingMode.HOLD_TO_RECORD)
 
     def cleanup(self):
