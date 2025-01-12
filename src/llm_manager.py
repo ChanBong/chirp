@@ -9,6 +9,7 @@ from llm.OpenAIClient import OpenAIClient
 from llm.OllamaClient import OllamaClient
 from llm.NoAIClient import NoAIClient
 from llm.PerplexityClient import PerplexityClient
+from llm.GroqClient import GroqClient
 import prompt
 
 class LLMManager:
@@ -35,6 +36,8 @@ class LLMManager:
             return OllamaClient(keep_alive=ConfigManager.get_value('llm_backend.keep_alive', self.app_name))
         elif self.backend_type == 'perplexity':
             return PerplexityClient()
+        elif self.backend_type == 'groq':
+            return GroqClient()
         else:
             raise ValueError(f"Unsupported LLM backend type: {self.backend_type}")
 
