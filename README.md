@@ -81,8 +81,8 @@ Purfview's [whisper-standalone-win](https://github.com/Purfview/whisper-standalo
 #### 1. Clone the repository:
 
 ```bash
-git clone https://github.com/dariox1337/whisper-writer
-cd whisper-writer
+git clone https://github.com/ChanBong/chirp
+cd chirp
 ```
 
 #### 2. Create a virtual environment and activate it:
