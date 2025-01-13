@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QIcon, QIntValidator, QDoubleValidator
+from pathlib import Path
 
 from config_manager import ConfigManager
 
@@ -362,23 +363,23 @@ class SettingsWindow(QWidget):
 
         # Load current prompts
         try:
-            app_system_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'apps', app_name, 'SYSTEM.txt')
-            default_system_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'apps', 'SYSTEM.txt')
+            app_system_path = Path(__file__).parent.parent / 'apps' / app_name / 'SYSTEM.txt'
+            default_system_path = Path(__file__).parent.parent / 'apps' / 'SYSTEM.txt'
 
-            app_user_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'apps', app_name, 'USER.txt')
-            default_user_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'apps', 'USER.txt')
+            app_user_path = Path(__file__).parent.parent / 'apps' / app_name / 'USER.txt'
+            default_user_path = Path(__file__).parent.parent / 'apps' / 'USER.txt'
 
-            if os.path.exists(app_system_path):
+            if app_system_path.exists():
                 with open(app_system_path, 'r', encoding='utf-8') as f:
                     system_text.setText(f.read())
-            elif os.path.exists(default_system_path):
+            elif default_system_path.exists():
                 with open(default_system_path, 'r', encoding='utf-8') as f:
                     system_text.setText(f.read())
             
-            if os.path.exists(app_user_path):
+            if app_user_path.exists():
                 with open(app_user_path, 'r', encoding='utf-8') as f:
                     user_text.setText(f.read())
-            elif os.path.exists(default_user_path):
+            elif default_user_path.exists():
                 with open(default_user_path, 'r', encoding='utf-8') as f:
                     user_text.setText(f.read())
         except Exception as e:
@@ -389,13 +390,13 @@ class SettingsWindow(QWidget):
         
         def save_prompts():
             try:
-                app_dir = os.path.join('src', 'apps', app_name)
-                os.makedirs(app_dir, exist_ok=True)
+                app_dir = Path(__file__).parent.parent / 'apps' / app_name
+                app_dir.mkdir(parents=True, exist_ok=True)
                 
-                with open(os.path.join(app_dir, "SYSTEM.txt"), 'w', encoding='utf-8') as f:
+                with open(app_dir / "SYSTEM.txt", 'w', encoding='utf-8') as f:
                     f.write(system_text.toPlainText())
                 
-                with open(os.path.join(app_dir, "USER.txt"), 'w', encoding='utf-8') as f:
+                with open(app_dir / "USER.txt", 'w', encoding='utf-8') as f:
                     f.write(user_text.toPlainText())
                     
                 QMessageBox.information(self, "Success", "Prompts saved successfully!")

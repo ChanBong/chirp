@@ -244,10 +244,11 @@ class StreamingResultHandler:
                 to_clipboard(self.full_message)
             elif output_mode == 'notification':
                 self.event_bus.emit("show_balloon", self.full_message, self.name)
-
+            elif output_mode == 'pop-up':
+                self.event_bus.emit("end_of_stream", self.name)
+            
             self.full_message = ""
             self.buffer = ""
-            self.event_bus.emit("end_of_stream", self.name)
             return
 
         full_message = self.full_message + new_text

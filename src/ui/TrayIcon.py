@@ -1,8 +1,8 @@
-import os
 from PyQt6.QtWidgets import QSystemTrayIcon, QMenu, QApplication
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtCore import QObject, pyqtSignal
 from PyQt6.QtGui import QPixmap
+from pathlib import Path
 
 
 class TrayIcon(QObject):
@@ -17,8 +17,9 @@ class TrayIcon(QObject):
 
     def create_tray_icon(self):
         app = QApplication.instance()
-        icon_path = os.path.join('assets', 'chirp-logo.png')
-
+        icon_path = Path(__file__).parent.parent.parent / 'assets' / 'chirp-logo.png'
+        icon_path = icon_path.__str__()
+        
         self.tray_icon = QSystemTrayIcon(QIcon(icon_path), app)
 
         tray_menu = QMenu()

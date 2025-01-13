@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 
 def build_initial_messages_from_app_name(app_name):
@@ -40,11 +41,11 @@ def get_system_prompt_message(app_name):
     Returns:
         The system prompt message as a string.
     """
-    app_system_path = os.path.join(os.path.dirname(__file__), 'apps', app_name, 'SYSTEM.txt')
-    default_system_path = os.path.join(os.path.dirname(__file__), 'apps', 'SYSTEM.txt')
+    app_system_path = Path(__file__).parent / 'apps' / app_name / 'SYSTEM.txt'
+    default_system_path = Path(__file__).parent / 'apps' / 'SYSTEM.txt'
 
     try:
-        if os.path.exists(app_system_path):
+        if app_system_path.exists():
             with open(app_system_path, 'r', encoding='utf-8') as f:
                 return f.read().strip()
         else:
@@ -65,11 +66,11 @@ def get_user_prompt_message_from_app_name(app_name):
     Returns:
         The user prompt message as a string.
     """
-    app_user_path = os.path.join(os.path.dirname(__file__), 'apps', app_name, 'USER.txt')
-    default_user_path = os.path.join(os.path.dirname(__file__), 'apps', 'USER.txt')
+    app_user_path = Path(__file__).parent / 'apps' / app_name / 'USER.txt'
+    default_user_path = Path(__file__).parent / 'apps' / 'USER.txt'
 
     try:
-        if os.path.exists(app_user_path):
+        if app_user_path.exists():
             with open(app_user_path, 'r', encoding='utf-8') as f:
                 return f.read()
         else:
