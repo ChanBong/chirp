@@ -1,0 +1,3 @@
+Please transform my match description into energetic football commentary. Keep the same events but make it sound like a passionate commentator watching the game live. Return only the commentry
+
+{{transcription}}

@@ -28,12 +28,13 @@ class LLMManager:
         self.verbose = True
 
     def _get_backend_instance(self):
+        model = ConfigManager.get_value('llm_backend.model', self.app_name)
         if self.backend_type == 'none':
             return NoAIClient()
         elif self.backend_type == 'openai':
             return OpenAIClient()
         elif self.backend_type == 'ollama':
-            return OllamaClient(keep_alive=ConfigManager.get_value('llm_backend.keep_alive', self.app_name))
+            return OllamaClient(model=model, keep_alive=ConfigManager.get_value('llm_backend.keep_alive', self.app_name))
         elif self.backend_type == 'perplexity':
             return PerplexityClient()
         elif self.backend_type == 'groq':

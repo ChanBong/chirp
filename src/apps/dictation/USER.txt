@@ -1,0 +1,5 @@
+Correct any misheard words, apply formatting commands (e.g., new paragraphs, bullet points, etc.), and preserve my intended meaning. Here is my raw text:
+
+{{transcription}}
+
+When you’re finished, provide only the cleaned-up text as your final answer. DO NOT include any other text or instructions. DO NOT explain your reasoning.

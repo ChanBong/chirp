@@ -216,6 +216,7 @@ llm_backends:
       description: "The model to use for LLM processing."
       options:
         - llama3.1
+        - smollm2
         - llama3.1-uncensored
         - gemma2
         - llama3
