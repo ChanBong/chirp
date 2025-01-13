@@ -215,15 +215,9 @@ llm_backends:
       type: str
       description: "The model to use for LLM processing."
       options:
-        - llama3.1
+        - llama3.2
         - smollm2
-        - llama3.1-uncensored
-        - gemma2
-        - llama3
-        - llama3.1-8b
-        - llama3.1-70b
-        - llama3.1-8b-instruct
-        - llama3.1-70b-instruct
+        - llama2-uncensored
     temperature:
       value: 0.0
       type: float
