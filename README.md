@@ -7,6 +7,15 @@
 
 Transform your computer interaction with smart, voice-activated hotkeys. Chirp lets you control any application through natural speech, powered by AI.
 
+## Sections
+
+- [Key Features](#key-features)
+- [Philosophy](#philosophy)
+- [Getting Started](#getting-started)
+- [Customization](#customization)
+- [Troubleshooting](#troubleshooting)
+- [Future](#future)
+
 ## Key Features
 
 ### 🎯 Smart Hotkeys
