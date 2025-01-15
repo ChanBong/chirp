@@ -24,7 +24,9 @@ class AudioManager:
         self.thread = None
         self.pyaudio = pyaudio.PyAudio()
         self.debug_recording_dir = 'debug_audio'
+        self.tts_audio_dir = 'tts_audio'
         os.makedirs(self.debug_recording_dir, exist_ok=True)
+        os.makedirs(self.tts_audio_dir, exist_ok=True)
 
     def start(self):
         if self.state == AudioManagerState.STOPPED:

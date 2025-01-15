@@ -8,6 +8,7 @@ from enums import AppState, RecordingMode
 from event_bus import EventBus
 from config_manager import ConfigManager
 from utils import to_clipboard, read_clipboard, is_bad_transcription
+from tts_manager import TTSManager
 
 
 class App:
@@ -38,8 +39,9 @@ class App:
         self.is_llm_streaming = self.config.get('output_options', {}).get('is_streaming', False)
         self.is_streaming = False
         self.streaming_chunk_size = self.transcription_manager.get_preferred_streaming_chunk_size()
-        self.result_handler = (StreamingResultHandler(self.name, self.event_bus, self.output_manager) if self.is_llm_streaming else None)
         self.current_session_id = None
+        self.tts_manager = TTSManager(self, event_bus) if self.output_mode == 'voice' else None
+        self.result_handler = (StreamingResultHandler(self.name, self.event_bus, self.output_manager, self.tts_manager) if self.is_llm_streaming else None)
 
         self.event_bus.subscribe("raw_transcription_result", self.handle_raw_transcription)
         self.event_bus.subscribe("transcription_finished", self.handle_transcription_finished)
@@ -134,6 +136,7 @@ class App:
         self.current_session_id = session_id
 
         if self.is_llm_streaming:
+            print(f"Streaming result: {result}, output mode: {self.output_mode}")
             self.result_handler.handle_result(result, self.output_mode)
         else:
             self.output(result['assistant'])
@@ -167,8 +170,11 @@ class App:
         elif self.output_mode == 'text':
             self.output_manager.typewrite(text)
         elif self.output_mode == 'voice':
-            print("Support for voice output is not implemented yet. Output mode set to notification")
-            self.event_bus.emit("show_balloon", text, self.name)
+            if self.tts_manager:
+                self.tts_manager.run_tts(text)
+            else:
+                print("TTS manager not initialized. Falling back to notification")
+                self.event_bus.emit("show_balloon", text, self.name)
 
         if self.save_output_to_clipboard:
             to_clipboard(text)
@@ -196,6 +202,10 @@ class App:
         self.recording_stopped()
         self.finish_transcription()
         self.finish_inferencing()
+        
+        if self.tts_manager:
+            self.tts_manager.stop()
+            
         if self.transcription_manager:
             self.transcription_manager.cleanup()
         if self.llm_manager:
@@ -215,18 +225,19 @@ class App:
         self.recording_mode = None
         self.state = None
         self.is_streaming = None
-        # self.post_processor = None
         self.transcription_manager = None
         self.result_handler = None
+        self.tts_manager = None
 
 
 class StreamingResultHandler:
-    def __init__(self, name, event_bus: EventBus, output_manager: OutputManager):
+    def __init__(self, name, event_bus: EventBus, output_manager: OutputManager, tts_manager: TTSManager):
         self.name = name
         self.buffer = ""
         self.full_message = ""
         self.output_manager = output_manager
         self.event_bus = event_bus
+        self.tts_manager = tts_manager
     
     def handle_result(self, result: Dict, output_mode: str):
         new_text = result['assistant']
@@ -246,6 +257,12 @@ class StreamingResultHandler:
                 self.event_bus.emit("show_balloon", self.full_message, self.name)
             elif output_mode == 'pop-up':
                 self.event_bus.emit("end_of_stream", self.name)
+            elif output_mode == 'voice':
+                if self.tts_manager:
+                    self.tts_manager.run_tts(self.full_message)
+                else:
+                    print("TTS manager not initialized. Falling back to notification")
+                    self.event_bus.emit("show_balloon", self.full_message, self.name)
             
             self.full_message = ""
             self.buffer = ""
@@ -257,8 +274,12 @@ class StreamingResultHandler:
         elif output_mode == 'text':
             self.output_manager.typewrite(new_text)
         elif output_mode == 'voice':
-            print("Support for voice output is not implemented yet. Output mode set to notification")
-            self.event_bus.emit("show_balloon", new_text, self.name)
+            if self.tts_manager:
+                print(f"Running TTS for: {new_text}")
+                self.tts_manager.run_tts(new_text)
+            else:
+                print("TTS manager not initialized. Falling back to notification")
+                self.event_bus.emit("show_balloon", new_text, self.name)
 
         self.buffer = new_text
         self.full_message = full_message
