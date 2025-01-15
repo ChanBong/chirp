@@ -1,25 +1,46 @@
-
 # <img src="./assets/chirp_logo.png" alt="Chirp icon" width="25" height="25"> Chirp
 ![version](https://img.shields.io/badge/version-1.0-blue)
 
 <p align="center">
-    <img src="./assets/chirp-demo-01.gif" alt="Chirp demo 01" width="340" height="136">
+    <img src="./assets/chirp-demo-01.gif" alt="Chirp demo 01" width="340" height="136">
 </p>
 
-Chirp is an app that let's you go voice first with your device. It works as something
+Transform your computer interaction with smart, voice-activated hotkeys. Chirp lets you control any application through natural speech, powered by AI.
 
 ## Key Features
-- **Customizable backends** : chirp has support for major api-based and local inferencing frameworks. To switch is as simple as changing the settings in UI
 
-<p align="center">
-    <img src="./assets/customizable-backends.png" alt="Customizable backends" width="880" height="540">
-</p>
+### 🎯 Smart Hotkeys
+- Use traditional or "rapid" hotkey combinations
+- Voice-activate any computer function
+- Works across all applications
+- Replace typing with natural speech
 
-- **Various output modes** : You can get output from the app in any form you like, from direct text on the cursor position to voice directed to any speaker
+### 🔧 Fully Customizable Stack
+- Choose between cloud or local processing
+- Supported backends:
+  - Transcription: OpenAI Whisper, Faster-Whisper, VOSK
+  - LLM: OpenAI GPT, Ollama, and more
+  - Text-to-Speech: Various cloud and local options
+- Easy to add new backends
 
-<p align="center">
-    <img src="./assets/output-modes.png" alt="Output modes" width="880" height="540">
-</p>
+### 🎨 Flexible Output Modes
+- Direct text insertion at cursor
+- Pop-up windows for detailed responses
+- Voice responses through your speakers
+- System notifications
+- Customizable for each command
+
+### 🔌 Plugin Architecture
+- Create new commands without coding
+- Simple YAML-based configuration
+- Rich marketplace for community plugins
+- Full control over data and context
+
+### ⚡ Performance Focused
+- Multi-threaded architecture
+- Minimal UI with maximum customization
+- Lightweight and responsive
+- GPU acceleration support
 
 ## Philosophy
 
@@ -134,9 +155,9 @@ python run.py
 
 ## Troubleshooting
 
--  This should redirect to troubleshooting.md and I have included what to do in case of frequently Ask questions.
--  So, if the check if Ollama is running, check your config.yaml
--  You can also check for any GPU related issues. So if your model is not being loaded in the GPU or fast service for is not using GPU, there is troubleshooting code that you can use. Also, you can set verbose equals to true in the settings to get verbose output to your terminal. And you can hit debug audio saving checkbox to save the audio for later debugging.
+-  This should redirect to troubleshooting.md and I have included what to do in case of frequently Ask questions.
+-  So, if the check if Ollama is running, check your config.yaml
+-  You can also check for any GPU related issues. So if your model is not being loaded in the GPU or fast service for is not using GPU, there is troubleshooting code that you can use. Also, you can set verbose equals to true in the settings to get verbose output to your terminal. And you can hit debug audio saving checkbox to save the audio for later debugging.
 
 ## Future
 
