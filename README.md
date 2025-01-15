@@ -27,7 +27,7 @@ Transform your computer interaction with smart, voice-activated hotkeys. Chirp l
 ### 🔧 Fully Customizable Stack
 
 <p align="center">
-    <img src="./assets/chirp-options.svg" alt="Chirp philosophy" width="880" height="540">
+    <img src="./assets/chirp-options.png" alt="Chirp philosophy" width="880" height="540">
 </p>
 
 - Choose between cloud or local processing
