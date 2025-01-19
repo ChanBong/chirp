@@ -6,7 +6,7 @@ load_dotenv()
 
 class GroqClient:
     """Client for interacting with the Groq API for chat completions and other functionalities."""
-    def __init__(self, verbose=False):
+    def __init__(self, model: str = "mixtral-8x7b-32768", verbose: bool = True):
         """
         Initialize the GroqClient with the API key.
         
@@ -14,6 +14,7 @@ class GroqClient:
             verbose (bool): Whether to print verbose output.
         """
         self.client = Groq(api_key=os.getenv('GROQ_API_KEY'))
+        self.model = model
         self.verbose = verbose
 
     def stream_completion(self, messages, model, **kwargs):

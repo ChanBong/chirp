@@ -9,10 +9,10 @@ load_dotenv()
 class PerplexityClient:
     """Client for interacting with the Perplexity AI API."""
 
-    def __init__(self, verbose=False):
+    def __init__(self, model: str = "llama-3.1-sonar-large-128k-online", verbose=False):
         """Initialize the Perplexity AI client with the API key."""
         self.api_key = os.getenv('PERPLEXITY_API_KEY')
-        self.model = "llama-3.1-sonar-large-128k-online"
+        self.model = model
         self.base_url = "https://api.perplexity.ai/chat/completions"
         self._initialized = False
         self.verbose = verbose

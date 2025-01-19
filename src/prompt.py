@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from console_manager import console
 
 
 def build_initial_messages_from_app_name(app_name):
@@ -49,11 +50,11 @@ def get_system_prompt_message(app_name):
             with open(app_system_path, 'r', encoding='utf-8') as f:
                 return f.read().strip()
         else:
-            print(f"Error: System prompt '{app_name}' not found. Using default prompt.")
+            console.warning(f"Error: System prompt '{app_name}' not found. Using default prompt.")
             with open(default_system_path, 'r', encoding='utf-8') as f:
                 return f.read().strip()
     except Exception as e:
-        print(f"Error reading system prompt file: {e}")
+        console.warning(f"Error reading system prompt file: {e}")
         return ""
 
 
@@ -74,9 +75,9 @@ def get_user_prompt_message_from_app_name(app_name):
             with open(app_user_path, 'r', encoding='utf-8') as f:
                 return f.read()
         else:
-            print(f"Error: User prompt '{app_name}' not found. Using default prompt.")
+            console.warning(f"Error: User prompt '{app_name}' not found. Using default prompt.")
             with open(default_user_path, 'r', encoding='utf-8') as f:
                 return f.read()
     except Exception as e:
-        print(f"Error reading user prompt file: {e}")
+        console.warning(f"Error reading user prompt file: {e}")
         return ""

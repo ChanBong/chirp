@@ -7,11 +7,13 @@ import os
 import datetime
 from collections import namedtuple
 from queue import Queue, Empty
+from rich import print as rprint
 
 from config_manager import ConfigManager
 from event_bus import EventBus
 from enums import RecordingMode, AudioManagerState
 from apps import App
+from console_manager import console
 
 RecordingContext = namedtuple('RecordingContext', ['app', 'session_id'])
 
@@ -31,6 +33,7 @@ class AudioManager:
             self.state = AudioManagerState.IDLE
             self.thread = threading.Thread(target=self._audio_thread)
             self.thread.start()
+            console.success("Started audio manager\n")
 
     def stop(self):
         if self.state != AudioManagerState.STOPPED:
@@ -158,7 +161,7 @@ class AudioManager:
                 if vad.is_speech(int16_frame.tobytes(), sample_rate):
                     silent_frame_count = 0
                     if not speech_detected:
-                        ConfigManager.log_print("Speech detected.")
+                        ConfigManager.log_print("[green]Speech detected.[/green]")
                         speech_detected = True
                 else:
                     silent_frame_count += 1
@@ -194,23 +197,19 @@ class AudioManager:
         audio_data = np.array(recording, dtype=np.float32)
         duration = len(audio_data) / audio_config['sample_rate']
 
-        ConfigManager.log_print(f'Recording finished. Size: {audio_data.size} samples, '
-                                f'Duration: {duration:.2f} seconds')
-        print("context.app.name", context.app.name)
-        # COME BACK TO THIS
-        # min_duration_ms = ConfigManager.get_value(
-        #     f'recording_options.{context.app.name}.min_duration')
+        ConfigManager.log_print(f'[dim]Recording finished. Size:[/dim] {audio_data.size} samples, '
+                              f'[dim]Duration:[/dim] {duration:.2f} seconds')
         min_duration_ms = 200
 
         if audio_config['use_vad'] and not speech_detected:
-            ConfigManager.log_print('Discarded because no speech has been detected.')
+            ConfigManager.log_print('[yellow]Discarded because no speech has been detected.[/yellow]')
             self.event_bus.emit("audio_discarded", context.session_id)
         elif (duration * 1000) >= min_duration_ms:
             self._push_audio_chunk(context, audio_data,
-                                   audio_config['sample_rate'], audio_config['channels'],
-                                   audio_config['language'])
+                                 audio_config['sample_rate'], audio_config['channels'],
+                                 audio_config['language'])
         else:
-            ConfigManager.log_print('Discarded due to being too short.')
+            ConfigManager.log_print('[yellow]Discarded due to being too short.[/yellow]')
             self.event_bus.emit("audio_discarded", context.session_id)
 
     def _calculate_frame_size(self, sample_rate: int, streaming_chunk_size: int,
@@ -237,22 +236,22 @@ class AudioManager:
         if device == '' or device is None:
             default_index = get_default_input_device_index()
             device_info = get_device_info(default_index)
-            ConfigManager.log_print(f"Using default input device: {device_info} "
-                                    f"(index: {default_index})")
+            ConfigManager.log_print(f"[dim]Using default input device: {device_info} "
+                                  f"[dim](index: {default_index})[/dim]")
             return default_index
 
         try:
             device_index = int(device)
             device_info = get_device_info(device_index)
-            ConfigManager.log_print(f"Using specified input device: {device_info} "
-                                    f"(index: {device_index})")
+            ConfigManager.log_print(f"[dim]Using specified input device:[/dim] {device_info} "
+                                  f"[dim](index: {device_index})[/dim]")
             return device_index
         except (ValueError, IOError):
-            ConfigManager.log_print(f"Invalid device index: {device}. Using default.")
+            ConfigManager.log_print(f"[dim][red]Invalid device index:[/red] {device}. [yellow]Using default.[/yellow][/dim]")
             default_index = get_default_input_device_index()
             device_info = get_device_info(default_index)
-            ConfigManager.log_print(f"Selected default input device: {device_info} "
-                                    f"(index: {default_index})")
+            ConfigManager.log_print(f"[dim]Selected default input device:[/dim] {device_info} "
+                                  f"[dim](index: {default_index})[/dim]")
             return default_index
 
     def _process_audio_frame(self, frame: bytes, gain: float) -> np.ndarray:

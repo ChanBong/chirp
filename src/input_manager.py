@@ -3,11 +3,12 @@ import time
 from pynput import keyboard, mouse
 import platform
 import ctypes
+from rich import print as rprint
 
 from event_bus import EventBus
 from enums import InputEvent, KeyCode
 from config_manager import ConfigManager
-
+from console_manager import console
 
 class PynputBackend():
     """
@@ -362,9 +363,20 @@ class InputManager:
             keys = self.parse_key_combination(shortcut)
             is_tap_sequence = isinstance(shortcut, str) and shortcut.upper().startswith('TAP:')
             self.shortcuts[app_name] = KeyChord(keys, is_tap_sequence=is_tap_sequence)
-
+            if is_tap_sequence:
+                rprint(f"[dim]Loaded tap sequence:[/dim] {shortcut.split(':')[1]} for [green]{app_name}[/green]")
+            else:
+                rprint(f"[dim]Loaded hotkey:[/dim] {shortcut} for [green]{app_name}[/green]")
+        
+        # Leave a line for better readability
+        print("")
+    
     def start(self):
-        self.backend.start()
+        try:
+            self.backend.start()
+            console.success("Started input manager\n")
+        except Exception as e:
+            console.error(f"Failed to start input manager: {e}")
 
     def stop(self):
         self.backend.stop()
@@ -378,7 +390,7 @@ class InputManager:
             'ALT': frozenset({KeyCode.ALT_LEFT, KeyCode.ALT_RIGHT}),
             'META': frozenset({KeyCode.META_LEFT, KeyCode.META_RIGHT}),
         }
-        print(combination_string)
+        
         # Check if this is a tap sequence (format: "TAP:CAPS_LOCK>S")
         if combination_string.upper().startswith('TAP:'):
             sequence = combination_string[4:].upper().split('>')
@@ -389,8 +401,7 @@ class InputManager:
                         keycode = KeyCode[key]
                         keys.add(keycode)
                     except KeyError:
-                        print(f"Unknown key in tap sequence: {key}")
-                print(keys)
+                        rprint(f"[red]Unknown key in tap sequence:[/red] {key}")
                 return keys
 
         # Original chord parsing (e.g. "CTRL+SHIFT+S")
@@ -403,7 +414,7 @@ class InputManager:
                     keycode = KeyCode[key]
                     keys.add(keycode)
                 except KeyError:
-                    print(f"Unknown key: {key}")
+                    rprint(f"[red]Unknown key:[/red] {key}")
         return keys
 
     def on_input_event(self, event):
@@ -416,7 +427,6 @@ class InputManager:
 
             if is_valid_chord:
                 self.event_bus.emit("shortcut_triggered", app_name, "press")
-                print(f"Shortcut triggered: {app_name}")
 
                 if self.backend.is_caps_lock_on() and key_chord.is_tap_sequence:
                     # Toggle the primary key if it's Caps Lock and remove the secondary key that was typed
@@ -429,7 +439,7 @@ class InputManager:
             # For normal chord combos, we check if we just lost activation:
             elif was_active and not key_chord.is_valid_chord():
                 self.event_bus.emit("shortcut_triggered", app_name, "release")
-
+            
     def update_shortcuts(self):
         self.load_shortcuts()
 

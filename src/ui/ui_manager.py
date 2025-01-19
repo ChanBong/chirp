@@ -8,7 +8,8 @@ from ui.TrayIcon import TrayIcon
 from ui.ScrollWindow import ScrollableMessageDialog
 from ui.PopupWindow import TimedPopup
 from config_manager import ConfigManager
-
+from console_manager import console
+from rich import print as rprint
 
 class UIManager:
     """
@@ -65,12 +66,19 @@ class UIManager:
 
     def handle_app_state_change(self, message):
         """Handle changes in app states, updating status based on the chosen mode."""
-        ConfigManager.log_print(message)
-        self.status_update_mode = "Window"
-        if self.status_update_mode == "Window":
+        print("")
+        if message == "":
             self.show_status_window(message)
-        elif self.status_update_mode == "Notification":
-            self.show_notification(message)
+
+        status_update_mode = ConfigManager.get_value('global_options.status_update_mode')
+        if status_update_mode is None:
+            status_update_mode = "Window"
+
+        rprint("⌛", message)
+        if status_update_mode == "Window":
+            self.show_status_window(message)
+        elif status_update_mode == "Notification":
+            self.show_notification(message, "Chirp")
 
     def show_status_window(self, message):
         """Display a status message in the status window."""
@@ -84,26 +92,19 @@ class UIManager:
         if not message:
             message = "Finished."
 
-        # Check word length
-        print(f"Message: {message}")
         words = message.split()
-        print(f"Words: {words}")
         if len(words) > 100:
-            # Truncate to 100 words
             short_message = " ".join(words[:100]) + "..."
-            # Save the full message for later use
             self.long_message_cache = message
 
-            # Show the balloon with the truncated text
             self.tray_icon.tray_icon.showMessage(
                 f"{app_name}",
                 short_message + "\n(click to read more)",
                 QIcon(),
-                5000  # or however many ms you want
+                5000
             )
         else:
-            # Show the full message
-            self.long_message_cache = message  # No need to store
+            self.long_message_cache = message
             self.tray_icon.tray_icon.showMessage(
                 f"{app_name}",
                 message,
@@ -113,12 +114,10 @@ class UIManager:
 
     def show_full_popup(self, text, app_name):
         """Display a popup message."""
-        print(f"Showing popup for app: {app_name}")
         self.popup_window.show_full_message_dialog(title=app_name, message=text)
 
     def start_of_stream(self, app_name):
         """Display a popup message."""
-        print(f"Starting popup for app: {app_name}")
         self.popup_window.show_popup(title=app_name)
 
     def append_text_to_popup(self, text):
@@ -130,7 +129,6 @@ class UIManager:
 
     def end_of_stream(self, app_name):
         """Hide the popup window."""
-        print(f"Hiding popup for app: {app_name}")
         self.popup_window.on_end_of_stream()
 
     def handle_tray_message_clicked(self):
@@ -146,9 +144,8 @@ class UIManager:
             pass
 
     def show_full_message_dialog(self, long_text):
-        print(f"Showing full message dialog: {long_text}")
         dialog = ScrollableMessageDialog(long_text)
-        dialog.exec()  # or dialog.show() if you prefer a non-modal window
+        dialog.exec()
 
 
     def show_error_message(self, message):

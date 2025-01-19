@@ -6,21 +6,23 @@ from typing import Dict, Any
 from config_manager import ConfigManager
 from event_bus import EventBus
 from transcription.transcription_backend_base import TranscriptionBackendBase
-
+from console_manager import console
 
 class TranscriptionManager:
-    def __init__(self, app, event_bus: EventBus):
+    def __init__(self, app, event_bus: EventBus, verbose: bool):
         self.app_name = app.name
         self.event_bus = event_bus
         self.audio_queue = app.audio_queue
         self.backend_type = ConfigManager.get_value('transcription_backend_type', self.app_name)
+        self.model = None
         backend_class = self._get_backend_class()
         self.backend: TranscriptionBackendBase = backend_class()
         self.processing_thread = None
         self.current_session_id = None
         self.transcribe_event = threading.Event()
         self.stop_event = threading.Event()
-
+        self.verbose = verbose
+        
     def _get_backend_class(self):
         if self.backend_type == 'faster_whisper':
             from transcription.faster_whisper_backend import FasterWhisperBackend
@@ -42,6 +44,7 @@ class TranscriptionManager:
             backend_options = ConfigManager.get_section('transcription_backend', self.app_name)
             try:
                 self.backend.initialize(backend_options)
+                self.print_succesful_initialization()
             except Exception as e:
                 raise RuntimeError(f"Failed to initialize transcription backend for app "
                                    f"{self.app_name}.\n{e}")
@@ -49,6 +52,28 @@ class TranscriptionManager:
         if not self.processing_thread:
             self.processing_thread = threading.Thread(target=self._transcription_thread)
             self.processing_thread.start()
+
+    def print_succesful_initialization(self):
+        console.success(f"{self.app_name} initialized {self.backend_type} transcription backend")
+        if self.backend_type == 'faster_whisper':
+            model = ConfigManager.get_value('transcription_backend.model', self.app_name)
+            self.model = model
+            device = ConfigManager.get_value('transcription_backend.device', self.app_name)
+            compute_type = ConfigManager.get_value('transcription_backend.compute_type', self.app_name)
+            temperature = ConfigManager.get_value('transcription_backend.temperature', self.app_name)
+            console.info(f"[LOCAL] Using model: {model} on {device} with {compute_type} compute type and temperature {temperature}")
+        elif self.backend_type == 'openai':
+            model = ConfigManager.get_value('transcription_backend.model', self.app_name)
+            self.model = model
+            temperature = ConfigManager.get_value('transcription_backend.temperature', self.app_name)
+            console.info(f"[OPENAI] Using model: {model} with temperature {temperature}")
+        elif self.backend_type == 'vosk':
+            model_path = ConfigManager.get_value('transcription_backend.model_path', self.app_name)
+            self.model = model_path
+            sample_rate = ConfigManager.get_value('transcription_backend.sample_rate', self.app_name)
+            console.info(f"[LOCAL] Using model: {model_path} with sample rate {sample_rate}")
+        else:
+            console.info(f"[UNKNOWN] Initialized {self.backend_type} transcription backend")
 
     def stop(self):
         self.stop_event.set()
@@ -101,9 +126,9 @@ class TranscriptionManager:
                         )
                         end_time = time.time()
                         transcription_time = end_time - start_time
-                        ConfigManager.log_print(
-                            f'Transcription completed in {transcription_time:.2f} seconds.\n'
-                            f"Raw transcription: {result['raw_text']}")
+                        console.info(f"Transcription completed in {transcription_time:.2f} seconds by {self.model}")
+                        if self.verbose:
+                            console.info(f"Raw transcription: {result['raw_text']}")
                         result['is_utterance_end'] = True
                         self._emit_result(result)
                     except queue.Empty:

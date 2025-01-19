@@ -2,6 +2,8 @@ import uuid
 import os
 from queue import Queue
 from typing import Dict, Optional
+from console_manager import console
+from rich import print as rprint
 
 from audio_manager import AudioManager
 from input_manager import InputManager
@@ -41,6 +43,8 @@ class ApplicationController:
     def load_active_apps(self):
         """Load and initialize active apps from configuration."""
         active_apps = ConfigManager.get_apps(active_only=True)
+        active_apps_names = [app['name'] for app in active_apps]
+        console.info(f"Active apps: {active_apps_names}")
         for app in active_apps:
             app_name = app['name']
             app_obj = App(app_name, self.event_bus)
@@ -63,13 +67,16 @@ class ApplicationController:
         if app:
             if event_type == "press":
                 if app.should_start_on_press():
+                    console.info(f"Shortcut triggered for {app_name}")
                     self.start_recording(app)
                 elif app.should_stop_on_press():
+                    console.info(f"Shortcut triggered for {app_name}")
                     self.stop_recording(app)
                     if app.recording_mode == RecordingMode.CONTINUOUS:
                         self.manually_stopped_apps.add(app.name)
             elif event_type == "release":
                 if app.should_stop_on_release():
+                    console.info(f"Shortcut triggered for {app_name}")
                     self.stop_recording(app)
 
     def start_recording(self, app: App):
@@ -81,7 +88,7 @@ class ApplicationController:
             app.start_transcription(session_id)
             self.manually_stopped_apps.discard(app.name)
         else:
-            ConfigManager.log_print("App or audio thread is busy.")
+            console.warning("App or audio thread is busy.")
 
     def stop_recording(self, app: App):
         """Stop recording for a given app."""
@@ -153,12 +160,13 @@ class ApplicationController:
 
         initialization_error = None
         for app in self.active_apps.values():
+            console.setup_message(f"Activating {app.name}")
             try:
                 app.transcription_manager.start()
             except RuntimeError as e:
                 initialization_error = str(e)
-                ConfigManager.log_print(f"Failed to start transcription manager for "
-                                      f"app {app.name}.\n{initialization_error}")
+                console.error(f"Failed to start transcription manager for "
+                            f"app {app.name}.\n{initialization_error}")
                 break
 
             # Only try to start LLM manager if it exists
@@ -167,14 +175,17 @@ class ApplicationController:
                     app.llm_manager.start()
                 except RuntimeError as e:
                     initialization_error = str(e)
-                    ConfigManager.log_print(f"Failed to start LLM manager for "
-                                          f"app {app.name}.\n{initialization_error}")
+                    console.error(f"Failed to start LLM manager for "
+                                f"app {app.name}.\n{initialization_error}")
                     break
+            
+            # Leave a line after each component for better readability
+            print("")
 
         if initialization_error:
             self.cleanup()
             self.listening = False
-            error_message = (f"Failed to initialize transcription backend.\n"
+            error_message = (f"Failed to initialize backends.\n"
                            f"{initialization_error}\nPlease check your settings.")
             if self.ui_manager:
                 self.ui_manager.show_settings_with_error(error_message)
@@ -182,6 +193,7 @@ class ApplicationController:
                 raise RuntimeError(error_message)
         else:
             self.event_bus.emit("initialization_successful")
+
 
     def close_application(self):
         """Initiate the application closing process."""

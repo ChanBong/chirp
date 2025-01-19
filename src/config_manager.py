@@ -2,6 +2,7 @@ import yaml
 import os
 from typing import Any, Dict, List, Optional
 from event_bus import EventBus
+from rich import print as rprint
 
 
 class ConfigValidator:
@@ -26,22 +27,22 @@ class ConfigValidator:
             current_path = path + [key]
             
             if key not in config:
-                print(f"Adding missing key: {'.'.join(current_path)}")
+                rprint(f"[yellow]Adding missing key:[/yellow] {'.'.join(current_path)}")
                 config[key] = ConfigValidator._get_default_value(value)
             elif isinstance(value, dict) and 'value' not in value:
                 if not isinstance(config[key], dict):
-                    print(f"Replacing invalid value for {'.'.join(current_path)} with default")
+                    rprint(f"[red]Replacing invalid value for[/red] {'.'.join(current_path)} [red]with default[/red]")
                     config[key] = {}
                 ConfigValidator._validate_section(config[key], value, current_path)
             elif not ConfigValidator._validate_value(config[key], value):
-                print(f"Replacing invalid value for {'.'.join(current_path)} with default")
+                rprint(f"[red]Replacing invalid value for[/red] {'.'.join(current_path)} [red]with default[/red]")
                 config[key] = ConfigValidator._get_default_value(value)
 
         # Only remove spurious keys for non-backend sections
         if not any(p.endswith('_backends') for p in path):
             keys_to_remove = [key for key in config if key not in schema]
             for key in keys_to_remove:
-                print(f"Removing spurious key: {'.'.join(path + [key])}")
+                rprint(f"[yellow]Removing spurious key:[/yellow] {'.'.join(path + [key])}")
                 del config[key]
 
     @staticmethod
@@ -373,7 +374,7 @@ class ConfigManager:
     @classmethod
     def log_print(cls, message: str):
         if cls._config.get('global_options', {}).get('print_to_terminal', False):
-            print(message)
+            rprint(message)
 
     @classmethod
     def _load_config(cls) -> Dict:

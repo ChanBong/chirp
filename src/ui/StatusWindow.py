@@ -14,7 +14,7 @@ class StatusWindow(BaseWindow):
         """
         Initialize the status window.
         """
-        super().__init__('chirp :)', 250, 70, show_title)
+        super().__init__('chirp :)', 200, 40, show_title)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint
                             | Qt.WindowType.Tool | Qt.WindowType.WindowDoesNotAcceptFocus)
 
@@ -22,24 +22,24 @@ class StatusWindow(BaseWindow):
         status_layout.setContentsMargins(0, 0, 0, 0)
 
         self.icon_label = QLabel()
-        self.icon_label.setFixedSize(32, 32)
+        self.icon_label.setFixedSize(15, 15)
         microphone_path = os.path.join('assets', 'chirp-logo.png')
         pencil_path = os.path.join('assets', 'transcribing.png')
         thinking_path = os.path.join('assets', 'thinking.png')
         self.microphone_pixmap = QPixmap(
-            microphone_path).scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio,
+            microphone_path).scaled(15, 15, Qt.AspectRatioMode.KeepAspectRatio,
                                     Qt.TransformationMode.SmoothTransformation)
         self.pencil_pixmap = QPixmap(
-            pencil_path).scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio,
+            pencil_path).scaled(15, 15, Qt.AspectRatioMode.KeepAspectRatio,
                                 Qt.TransformationMode.SmoothTransformation)
         self.thinking_pixmap = QPixmap(
-            thinking_path).scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio,
+            thinking_path).scaled(15, 15, Qt.AspectRatioMode.KeepAspectRatio,
                                 Qt.TransformationMode.SmoothTransformation)
         self.icon_label.setPixmap(self.microphone_pixmap)
         self.icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.status_label = QLabel('Recording...')
-        self.status_label.setFont(QFont('Segoe UI', 12))
+        self.status_label.setFont(QFont('Segoe UI', 10))
         self.status_label.setStyleSheet("color: #505050;")
 
         status_layout.addStretch(1)
@@ -61,7 +61,7 @@ class StatusWindow(BaseWindow):
         window_height = self.height()
 
         x = (screen_width - window_width) // 2
-        y = screen_height - window_height - 120
+        y = screen_height - window_height - 100 
 
         self.move(x, y)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)

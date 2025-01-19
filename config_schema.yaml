@@ -19,6 +19,13 @@ global_options:
     value: false
     type: bool
     description: Whether to save audio files for debugging purposes.
+  status_update_mode:
+    value: Window
+    type: str
+    description: The mode to use for status updates about Chirp. Window will show a window with the status, Notification will show a desktop notification.
+    options:
+      - Window
+      - Notification
 
 apps:
   - name:

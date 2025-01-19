@@ -37,7 +37,6 @@ class OpenAIBackend(TranscriptionBackendBase):
 
         try:
             self.client = self.OpenAI(api_key=api_key, base_url=base_url)
-            ConfigManager.log_print("OpenAI client initialized successfully.")
             self._initialized = True
         except Exception as e:
             raise RuntimeError(f"Failed to initialize OpenAI client: {e}")

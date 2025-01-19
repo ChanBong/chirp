@@ -11,34 +11,35 @@ from llm.NoAIClient import NoAIClient
 from llm.PerplexityClient import PerplexityClient
 from llm.GroqClient import GroqClient
 import prompt
+from console_manager import console
 
 class LLMManager:
-    def __init__(self, app, event_bus: EventBus):
+    def __init__(self, app, event_bus: EventBus, verbose: bool):
         self.app_name = app.name
         self.event_bus = event_bus
+        self.verbose = verbose
         self.inference_queue = app.inference_queue
         self.backend_type = ConfigManager.get_value('llm_backend_type', self.app_name)
         self.is_streaming = ConfigManager.get_value('output_options.is_streaming', self.app_name)
-        print(f"{self.app_name} is streaming: {self.is_streaming}")
         self.backend = self._get_backend_instance()
+        self.model = self.backend.model
         self.current_session_id = None
         self.processing_thread = None
         self.stop_event = threading.Event()
         self.llm_event = threading.Event()
-        self.verbose = True
 
     def _get_backend_instance(self):
         model = ConfigManager.get_value('llm_backend.model', self.app_name)
         if self.backend_type == 'none':
             return NoAIClient()
         elif self.backend_type == 'openai':
-            return OpenAIClient()
+            return OpenAIClient(model=model, verbose=self.verbose)
         elif self.backend_type == 'ollama':
-            return OllamaClient(model=model, keep_alive=ConfigManager.get_value('llm_backend.keep_alive', self.app_name))
+            return OllamaClient(model=model, keep_alive=ConfigManager.get_value('llm_backend.keep_alive', self.app_name), verbose=self.verbose)
         elif self.backend_type == 'perplexity':
-            return PerplexityClient()
+            return PerplexityClient(model=model, verbose=self.verbose)
         elif self.backend_type == 'groq':
-            return GroqClient()
+            return GroqClient(model=model, verbose=self.verbose)
         else:
             raise ValueError(f"Unsupported LLM backend type: {self.backend_type}")
 
@@ -48,6 +49,7 @@ class LLMManager:
             backend_options = ConfigManager.get_section('backend', self.app_name)
             try:
                 self.backend.initialize(backend_options)
+                self.print_succesful_initialization()
             except Exception as e:
                 raise RuntimeError(f"Failed to initialize LLM backend for app "
                                  f"{self.app_name}.\n{e}")
@@ -55,6 +57,28 @@ class LLMManager:
         if not self.processing_thread:
             self.processing_thread = threading.Thread(target=self._llm_thread)
             self.processing_thread.start()
+
+
+    def print_succesful_initialization(self):
+        console.success(f"{self.app_name} initialized {self.backend_type} LLM backend")
+        if self.backend_type == 'openai':
+            temperature = ConfigManager.get_value('llm_backend.temperature', self.app_name)
+            console.info(f"[OPENAI] Using model: {self.model} with temperature {temperature}")
+        elif self.backend_type == 'ollama':
+            temperature = ConfigManager.get_value('llm_backend.temperature', self.app_name)
+            keep_alive = ConfigManager.get_value('llm_backend.keep_alive', self.app_name)
+            if isinstance(keep_alive, int) and keep_alive == -1:
+                console.info(f"[OLLAMA] Using model: {self.model} with temperature {temperature}. Model will be kept loaded indefinitely")
+            else:
+                console.info(f"[OLLAMA] Using model: {self.model} with temperature {temperature}. Model will be kept loaded for {keep_alive} ")
+        elif self.backend_type == 'perplexity':
+            temperature = ConfigManager.get_value('llm_backend.temperature', self.app_name)
+            console.info(f"[PERPLEXITY] Using model: {self.model} with temperature {temperature}")
+        elif self.backend_type == 'groq':
+            temperature = ConfigManager.get_value('llm_backend.temperature', self.app_name)
+            console.info(f"[GROQ] Using model: {self.model} with temperature {temperature}")
+        else:
+            console.info(f"[UNKNOWN] Initialized {self.backend_type} LLM backend")
     
     def stop(self):
         self.stop_event.set()
@@ -182,9 +206,9 @@ class LLMManager:
 
                     end_time = time.time()
                     inference_time = end_time - start_time
-                    ConfigManager.log_print(
-                        f'LLM response generated in {inference_time:.2f} seconds.\n'
-                        f'Response: {response}')
+                    console.info(f"LLM response generated in {inference_time:.2f} seconds by {self.model}")
+                    if self.verbose:
+                        console.info(f"Response: {response}")
 
                     if not self.is_streaming:
                         self._emit_result(response)

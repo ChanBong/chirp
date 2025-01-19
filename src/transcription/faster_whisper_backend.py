@@ -6,6 +6,7 @@ from typing import Dict, Any, Generator, List
 
 from transcription.transcription_backend_base import TranscriptionBackendBase
 from config_manager import ConfigManager
+from console_manager import console
 
 
 class FasterWhisperBackend(TranscriptionBackendBase):
@@ -35,7 +36,6 @@ class FasterWhisperBackend(TranscriptionBackendBase):
         self._initialized = True
 
     def _load_model(self):
-        ConfigManager.log_print('Creating Faster Whisper model...')
         compute_type = self.config.get('compute_type', 'default')
         model_path = self.config.get('model_path', '')
         device = self.config.get('device', 'auto')
@@ -43,32 +43,28 @@ class FasterWhisperBackend(TranscriptionBackendBase):
 
         if model_path:
             try:
-                ConfigManager.log_print(f'Loading model from: {model_path}')
+                console.info(f'Loading model from: {model_path}')
                 self.model = self.WhisperModel(model_path,
                                                device=device,
                                                compute_type=compute_type,
                                                download_root=None)
-                ConfigManager.log_print('Model loaded successfully from specified path.')
                 return
             except Exception as e:
-                ConfigManager.log_print(f'Error loading model from path: {e}')
-                ConfigManager.log_print('Falling back to online models...')
+                console.error(f'Error loading model from path: {e}')
+                console.warning('Falling back to online models...')
 
         # If model_path is empty or failed to load, use online models
         try:
-            ConfigManager.log_print(f'Attempting to load {model_name} model...')
             self.model = self.WhisperModel(model_name,
                                            device=device,
                                            compute_type=compute_type)
-            ConfigManager.log_print(f'{model_name.capitalize()} model loaded successfully.')
         except Exception as e:
-            ConfigManager.log_print(f'Error loading {model_name} model: {e}')
-            ConfigManager.log_print('Falling back to base model on CPU...')
+            console.error(f'Error loading {model_name} model: {e}')
+            console.warning('Falling back to base model on CPU...')
             try:
                 self.model = self.WhisperModel('base',
                                                device='cpu',
                                                compute_type='default')
-                ConfigManager.log_print('Base model loaded successfully on CPU.')
             except Exception as e:
                 raise RuntimeError(f"Failed to load any Whisper model. Last error: {e}")
 
@@ -301,3 +297,13 @@ class FasterWhisperBackend(TranscriptionBackendBase):
     def cleanup(self):
         self.model = None
         self._initialized = False
+
+    def transcribe(self, audio_path):
+        console.process(f"Transcribing audio file: {audio_path}")
+        with console.create_progress_bar("Transcription in progress...") as progress:
+            task = progress.add_task("Transcribing...", total=100)
+            # ... existing transcription code ...
+            # Update progress as needed:
+            progress.update(task, advance=10)
+            
+        console.success("Transcription completed successfully")

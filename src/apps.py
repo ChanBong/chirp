@@ -1,5 +1,6 @@
 from queue import Queue
 from typing import Dict
+from console_manager import console
 
 from output_manager import OutputManager
 from transcription_manager import TranscriptionManager
@@ -27,14 +28,15 @@ class App:
         self.read_from_clipboard = self.config.get('recording_options', {}).get('read_from_clipboard', False)
         self.save_output_to_clipboard = self.config.get('output_options', {}).get('save_output_to_clipboard', False)
         self.output_mode = self.config.get('output_options', {}).get('output_mode', 'text')
+        self.verbose = self.config.get('global_options', {}).get('print_to_terminal', False)
         self.event_bus = event_bus
         self.audio_queue = Queue()
         self.inference_queue = Queue()
         self.output_manager = OutputManager(name, event_bus)
         self.recording_mode = RecordingMode.PRESS_TO_TOGGLE
         self.state = AppState.IDLE
-        self.transcription_manager = TranscriptionManager(self, event_bus)
-        self.llm_manager = LLMManager(self, event_bus)
+        self.transcription_manager = TranscriptionManager(self, event_bus, self.verbose)
+        self.llm_manager = LLMManager(self, event_bus, self.verbose)
         self.is_llm_streaming = self.config.get('output_options', {}).get('is_streaming', False)
         self.is_streaming = False
         self.streaming_chunk_size = self.transcription_manager.get_preferred_streaming_chunk_size()
@@ -50,9 +52,10 @@ class App:
         """Start the transcription process for this app."""
         self.current_session_id = session_id
         self.state = AppState.RECORDING
+        console.info(f"Session id {self.current_session_id}\n")
+
         self.event_bus.emit("app_state_change", f"({self.name}) "
                             f"{'Streaming' if self.is_streaming else 'Recording'}...")
-        print(f"Starting transcription for session {self.current_session_id}")
         self.transcription_manager.start_transcription(session_id)
 
     def recording_stopped(self):
@@ -60,9 +63,6 @@ class App:
         if self.state == AppState.RECORDING:
             self.event_bus.emit("app_state_change", f"({self.name}) Transcribing...")
             self.state = AppState.TRANSCRIBING
-            print(f"Recording stopped for session {self.current_session_id}")
-        else:
-            print(f"Recording stopped for session {self.current_session_id}")
 
     def is_recording(self) -> bool:
         return self.state == AppState.RECORDING
@@ -99,7 +99,7 @@ class App:
         is_bad, reason = is_bad_transcription(result['raw_text'])
         if is_bad:
             self.finish_inferencing()
-            print(f"Skipping transcription because it is bad: {reason}")
+            console.warning(f"[{self.name}] Skipping transcription because it is bad: {reason}")
             self.event_bus.emit("inferencing_skipped", self.name)
             return
 
@@ -154,7 +154,6 @@ class App:
 
     def output(self, text: str):
         """Output the processed text using the output manager."""
-        print(f"Outputting: {text}")
         if not text:
             return
 
@@ -167,7 +166,7 @@ class App:
         elif self.output_mode == 'text':
             self.output_manager.typewrite(text)
         elif self.output_mode == 'voice':
-            print("Support for voice output is not implemented yet. Output mode set to notification")
+            console.warning("Support for voice output is not implemented yet. Output mode set to notification")
             self.event_bus.emit("show_balloon", text, self.name)
 
         if self.save_output_to_clipboard:
@@ -257,7 +256,7 @@ class StreamingResultHandler:
         elif output_mode == 'text':
             self.output_manager.typewrite(new_text)
         elif output_mode == 'voice':
-            print("Support for voice output is not implemented yet. Output mode set to notification")
+            console.warning("Support for voice output is not implemented yet. Output mode set to notification")
             self.event_bus.emit("show_balloon", new_text, self.name)
 
         self.buffer = new_text

@@ -9,13 +9,12 @@ from termcolor import colored
 
 class OllamaClient:
     """Class to handle Ollama API calls."""
-    def __init__(self, model: str = "llama3.2:latest", base_url: str = "http://localhost:11434", keep_alive: str = "5m"):
+    def __init__(self, model: str = "llama3.2:latest", base_url: str = "http://localhost:11434", keep_alive: str = "5m", verbose: bool = True):
         self.model = model
         self.base_url = base_url.rstrip('/')
         self._initialized = False
-        self.verbose = True
+        self.verbose = verbose
         self.keep_alive = keep_alive
-        print(f"OllamaClient initialized with keep_alive: {self.keep_alive}")
 
     def is_initialized(self) -> bool:
         return self._initialized
