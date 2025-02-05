@@ -4,6 +4,7 @@ from queue import Queue
 from typing import Dict, Optional
 from console_manager import console
 from rich import print as rprint
+import requests
 
 from audio_manager import AudioManager
 from input_manager import InputManager
@@ -149,6 +150,31 @@ class ApplicationController:
 
     def start_core_components(self):
         """Initialize and start core components."""
+        # Check if Ollama is running by attempting a connection
+        try:
+            response = requests.get("http://localhost:11434/api/version")
+            if response.status_code != 200:
+                raise RuntimeError("Ollama is not responding correctly")
+            rprint("[dim]Ollama is running[/dim]")
+        except requests.exceptions.ConnectionError:
+            console.info("Ollama is not running. Attempting to start Ollama...")
+            try:
+                os.system("ollama serve &")  # Start Ollama in background
+                # Wait for Ollama to start (try for a few seconds)
+                for _ in range(10):
+                    try:
+                        response = requests.get("http://localhost:11434/api/version")
+                        if response.status_code == 200:
+                            console.info("Successfully started Ollama")
+                            break
+                    except requests.exceptions.ConnectionError:
+                        import time
+                        time.sleep(1)
+                else:
+                    raise RuntimeError("Failed to start Ollama. Please start Ollama manually.")
+            except Exception as e:
+                raise RuntimeError(f"Failed to start Ollama: {str(e)}")
+
         if self.ui_manager:
             self.ui_manager.status_update_mode = ConfigManager.get_value(
                 'global_options.status_update_mode')
