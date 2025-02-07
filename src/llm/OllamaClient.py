@@ -5,6 +5,7 @@ from datetime import datetime
 import requests
 import re
 from termcolor import colored
+from console_manager import console
 
 
 class OllamaClient:
@@ -15,11 +16,15 @@ class OllamaClient:
         self._initialized = False
         self.verbose = verbose
         self.keep_alive = keep_alive
-
+        
     def is_initialized(self) -> bool:
         return self._initialized
     
     def initialize(self, options: Dict[str, Any]):
+        if not self._is_model_available():
+            console.process(f"Model {self.model} not found. Starting download...")
+            self._download_model()
+
         self._initialized = True
 
     def save_conversation(self, messages: List[Dict], filename: Optional[str] = None):
@@ -91,3 +96,67 @@ class OllamaClient:
     def cleanup(self):
         self.model = None
         self._initialized = False
+
+    def _is_model_available(self) -> bool:
+        """Check if the specified model is available locally."""
+        try:
+            url = f"{self.base_url}/api/tags"
+            response = requests.get(url)
+            if response.status_code == 200:
+                models = response.json().get('models', [])
+                return any(model['name'] == self.model for model in models)
+            return False
+        except Exception as e:
+            console.error(f"Error checking model availability: {e}")
+            return False
+
+    def _download_model(self) -> bool:
+        """Download the specified model."""
+        try:
+            url = f"{self.base_url}/api/pull"
+            data = {"name": self.model}
+            
+            def format_size(bytes: int) -> str:
+                """Convert bytes to human readable format."""
+                for unit in ['B', 'KB', 'MB', 'GB']:
+                    if bytes < 1024:
+                        return f"{bytes:.2f} {unit}"
+                    bytes /= 1024
+                return f"{bytes:.2f} TB"
+            
+            with console.create_progress_bar(f"Downloading {self.model}") as progress:
+                task = progress.add_task("Pulling manifest...", total=100)
+                
+                response = requests.post(url, json=data, stream=True)
+                if response.status_code == 200:
+                    for line in response.iter_lines():
+                        if line:
+                            status = json.loads(line)
+                            if 'status' in status:
+                                if status['status'] == 'pulling manifest':
+                                    progress.update(task, description="Pulling manifest...")
+                                elif 'total' in status and 'completed' in status:
+                                    # Calculate percentage for progress bar
+                                    percentage = (status['completed'] / status['total']) * 100
+                                    downloaded = format_size(status['completed'])
+                                    total_size = format_size(status['total'])
+                                    progress.update(task, 
+                                                 description=f"Downloading: {self.model} ({downloaded}/{total_size})", 
+                                                 completed=percentage)
+                                elif status['status'] == 'verifying sha256 digest':
+                                    progress.update(task, description="Verifying sha256 digest...", completed=95)
+                                elif status['status'] == 'writing manifest':
+                                    progress.update(task, description="Writing manifest...", completed=98)
+                                elif status['status'] == 'removing any unused layers':
+                                    progress.update(task, description="Cleaning up...", completed=99)
+                                elif status['status'] == 'success':
+                                    progress.update(task, description="Complete!", completed=100)
+                    
+                    console.success(f"Model {self.model} downloaded successfully!")
+                    return True
+                else:
+                    console.error(f"Failed to download model: Status code {response.status_code}")
+                    return False
+        except Exception as e:
+            console.error(f"Error downloading model: {str(e)}")
+            return False
