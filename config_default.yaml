@@ -1,0 +1,250 @@
+apps:
+- activation_backend:
+    secondary_key: q
+    trigger_delay: 0.05
+    trigger_key: CAPS_LOCK
+  activation_backend_type: rapid_tap
+  activation_backend_type_type: rapid_tap
+  llm_backend: {}
+  llm_backend_type: none
+  name: vanilla
+  output_options:
+    is_streaming: true
+    output_mode: text
+    save_output_to_clipboard: true
+    writing_key_press_delay: 0.005
+  recording_options:
+    gain: 1.0
+    language: en
+    read_from_clipboard: false
+    sound_device: null
+  transcription_backend:
+    compute_type: float16
+    condition_on_previous_text: true
+    device: cuda
+    initial_prompt: null
+    model: medium.en
+    temperature: 0.0
+  transcription_backend_type: faster_whisper
+  tts_backend_type: openai
+- activation_backend:
+    secondary_key: s
+    trigger_delay: 0.05
+    trigger_key: CAPS_LOCK
+  activation_backend_type: rapid_tap
+  activation_backend_type_type: rapid_tap
+  llm_backend:
+    keep_alive: '-1'
+    model: llama3.2:latest
+    temperature: 0.0
+  llm_backend_type: ollama
+  name: slack
+  output_options:
+    is_streaming: true
+    output_mode: text
+    save_output_to_clipboard: false
+    writing_key_press_delay: 0.005
+  recording_options:
+    gain: 1.0
+    language: en
+    read_from_clipboard: false
+    sound_device: null
+  transcription_backend:
+    compute_type: float16
+    condition_on_previous_text: true
+    device: cuda
+    initial_prompt: null
+    model: base.en
+    temperature: 0.0
+  transcription_backend_type: faster_whisper
+  tts_backend_type: openai
+- activation_backend:
+    secondary_key: p
+    trigger_delay: 0.05
+    trigger_key: CAPS_LOCK
+  activation_backend_type: rapid_tap
+  activation_backend_type_type: rapid_tap
+  llm_backend:
+    model: llama-3.1-sonar-small-128k-online
+    temperature: 0.0
+  llm_backend_type: perplexity
+  name: search
+  output_options:
+    is_streaming: true
+    output_mode: pop-up
+    save_output_to_clipboard: true
+    writing_key_press_delay: 0.005
+  recording_options:
+    gain: 1.0
+    language: en
+    read_from_clipboard: false
+    sound_device: null
+  transcription_backend:
+    compute_type: float16
+    condition_on_previous_text: true
+    device: cuda
+    initial_prompt: null
+    model: base.en
+    temperature: 0.0
+  transcription_backend_type: faster_whisper
+- activation_backend:
+    secondary_key: i
+    trigger_delay: 0.05
+    trigger_key: CAPS_LOCK
+  activation_backend_type: rapid_tap
+  activation_backend_type_type: rapid_tap
+  llm_backend:
+    keep_alive: -1
+    model: llama3.2:latest
+    temperature: 0.0
+  llm_backend_type: ollama
+  name: instagram
+  output_options:
+    is_streaming: true
+    output_mode: text
+    save_output_to_clipboard: false
+    writing_key_press_delay: 0.005
+  recording_options:
+    gain: 1.0
+    language: auto
+    read_from_clipboard: false
+    sound_device: null
+  transcription_backend:
+    compute_type: float16
+    condition_on_previous_text: true
+    device: cuda
+    initial_prompt: null
+    model: base.en
+    temperature: 0.0
+  transcription_backend_type: faster_whisper
+- activation_backend:
+    secondary_key: w
+    trigger_delay: 0.05
+    trigger_key: CAPS_LOCK
+  activation_backend_type: rapid_tap
+  activation_backend_type_type: rapid_tap
+  llm_backend:
+    keep_alive: -1
+    model: llama3.2:latest
+    temperature: 0.0
+  llm_backend_type: ollama
+  name: write
+  output_options:
+    is_streaming: true
+    output_mode: text
+    save_output_to_clipboard: true
+    writing_key_press_delay: 0.005
+  recording_options:
+    gain: 1.0
+    language: auto
+    read_from_clipboard: true
+    sound_device: null
+  transcription_backend:
+    compute_type: float16
+    condition_on_previous_text: true
+    device: cuda
+    initial_prompt: null
+    model: base.en
+    temperature: 0.0
+  transcription_backend_type: faster_whisper
+- activation_backend:
+    secondary_key: u
+    trigger_delay: 0.05
+    trigger_key: CAPS_LOCK
+  activation_backend_type: rapid_tap
+  activation_backend_type_type: rapid_tap
+  llm_backend:
+    keep_alive: 5m
+    model: llama3.2:latest
+    temperature: 0.0
+  llm_backend_type: ollama
+  name: understand
+  output_options:
+    is_streaming: true
+    output_mode: pop-up
+    save_output_to_clipboard: true
+    writing_key_press_delay: 0.005
+  recording_options:
+    gain: 1.0
+    language: auto
+    read_from_clipboard: true
+    sound_device: null
+  transcription_backend:
+    compute_type: float16
+    condition_on_previous_text: true
+    device: cuda
+    initial_prompt: null
+    model: base.en
+    temperature: 0.0
+  transcription_backend_type: faster_whisper
+- activation_backend:
+    secondary_key: f
+    trigger_delay: 0.05
+    trigger_key: CAPS_LOCK
+  activation_backend_type: rapid_tap
+  activation_backend_type_type: rapid_tap
+  llm_backend:
+    keep_alive: 5m
+    model: llama3.2:latest
+    temperature: 0.0
+  llm_backend_type: ollama
+  name: football
+  output_options:
+    is_streaming: true
+    output_mode: text
+    save_output_to_clipboard: false
+    writing_key_press_delay: 0.005
+  recording_options:
+    gain: 1.0
+    language: auto
+    read_from_clipboard: false
+    sound_device: null
+  transcription_backend:
+    compute_type: float16
+    condition_on_previous_text: true
+    device: cuda
+    initial_prompt: null
+    model: base
+    temperature: 0.0
+  transcription_backend_type: faster_whisper
+- activation_backend:
+    secondary_key: d
+    trigger_delay: 0.05
+    trigger_key: CAPS_LOCK
+  activation_backend_type: rapid_tap
+  activation_backend_type_type: rapid_tap
+  llm_backend:
+    keep_alive: 5m
+    model: smollm2
+    temperature: 0.0
+  llm_backend_type: ollama
+  name: dictation
+  output_options:
+    is_streaming: true
+    output_mode: text
+    save_output_to_clipboard: false
+    writing_key_press_delay: 0.005
+  recording_options:
+    gain: 1.0
+    language: auto
+    read_from_clipboard: false
+    sound_device: null
+  transcription_backend:
+    compute_type: float16
+    condition_on_previous_text: true
+    device: cuda
+    initial_prompt: null
+    model: base
+    temperature: 0.0
+  transcription_backend_type: faster_whisper
+global_options:
+  active_apps:
+  - vanilla
+  - slack
+  - write
+  - understand
+  print_to_terminal: true
+  save_debug_audio: true
+  start_minimized: false
+  start_on_startup: false
+  status_update_mode: Window

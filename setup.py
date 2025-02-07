@@ -74,10 +74,9 @@ def create_virtualenv(force: bool = False) -> None:
 def install_python_dependencies(requirements_file: str) -> None:
     """Install Python dependencies from the specified requirements file."""
     python_executable = get_venv_python()
-    req_path = os.path.join("requirements", requirements_file)
-    print(f"[*] Installing dependencies from {req_path}...")
+    print(f"[*] Installing dependencies from {requirements_file}...")
     try:
-        subprocess.check_call([python_executable, "-m", "pip", "install", "-r", req_path])
+        subprocess.check_call([python_executable, "-m", "pip", "install", "-r", requirements_file])
         print(f"[+] Installed dependencies from {requirements_file}.")
     except subprocess.CalledProcessError as e:
         print(f"[-] Error installing dependencies: {e}")
