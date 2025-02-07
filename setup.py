@@ -137,11 +137,6 @@ def create_run_file() -> None:
 def add_to_startup(run_file: str) -> None:
     """Add the run file to startup (currently implemented for Windows only)."""
     if is_windows():
-        confirm = input("[?] Add Chirp to startup? (y/n): ").strip().lower()
-        if confirm != "y":
-            print("[!] Skipping startup configuration.")
-            return
-
         startup_dir = os.path.join(
             os.path.expanduser("~"),
             "AppData",

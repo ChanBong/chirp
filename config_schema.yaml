@@ -222,7 +222,7 @@ llm_backends:
       type: str
       description: "The model to use for LLM processing."
       options:
-        - llama3.2
+        - llama3.2:latest
         - smollm2
         - llama2-uncensored
     temperature:
