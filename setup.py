@@ -2,7 +2,6 @@ import os
 import sys
 import shutil
 import subprocess
-import platform
 from pathlib import Path
 
 # ----- Utility Functions ----- #
@@ -193,6 +192,13 @@ def install_ollama() -> None:
     try:
         subprocess.run(["ollama", "--version"], check=True, capture_output=True)
         print("[+] Ollama is working correctly!")
+
+        if is_windows() and os.path.exists("ollama_installer.exe"):
+            try:
+                os.remove("ollama_installer.exe")
+                print("[+] Cleaned up installer file")
+            except OSError as e:
+                print(f"[!] Could not remove installer file: {e}")
     except subprocess.CalledProcessError:
         print("[-] Ollama installation verification failed. Please ensure Ollama is properly installed and in your PATH.")
         print("    You may need to restart your terminal or computer for the changes to take effect.")
@@ -250,6 +256,9 @@ def main() -> None:
     # --- OS-Level Dependencies --- #
     if not is_windows():
         install_os_dependencies()
+
+    if is_windows():
+        print("[*] Make sure you have installed Microsoft C++ Build Tools or later to continue. Download it from https://visualstudio.microsoft.com/visual-cpp-build-tools/")
 
     # --- Python Package Installation --- #
     install_python_dependencies("requirements.txt")
