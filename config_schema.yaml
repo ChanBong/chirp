@@ -1,289 +1,311 @@
-global_options:
-  active_apps:
-    value: [Default]
-    type: list
-    description: The apps that are currently active.
-  start_on_startup:
-    value: false
-    type: bool
-    description: Whether to automatically start the application when system boots.
-  start_minimized:
-    value: false
-    type: bool
-    description: Whether to start the application minimized.
-  print_to_terminal:
-    value: true
-    type: bool
-    description: Whether to print debug information to the terminal.
-  save_debug_audio:
-    value: false
-    type: bool
-    description: Whether to save audio files for debugging purposes.
-  status_update_mode:
-    value: Window
-    type: str
-    description: The mode to use for status updates about Chirp. Window will show a window with the status, Notification will show a desktop notification.
-    options:
-      - Window
-      - Notification
-
-apps:
-  - name:
-      value: Default
-      type: str
-      description: The name of the app.
-    activation_backend_type:
-      value: press_together
-      type: str
-      description: "The activation method to use. Options: press_together, rapid_tap"
-      options:
-        - press_together
-        - rapid_tap
-    activation_backend:
-      type: dict
-      description: "The setup for the activation method."
-    recording_options:
-      sound_device:
-        value: null
-        type: "int or null"
-        description: "The numeric index of the sound device to use for recording. Run `python list_audio_devices.py` to to find device numbers."
-      read_from_clipboard:
-        value: false
-        type: bool
-        description: "Whether to read the clipboard content for the user prompt."
-      language:
-        value: auto
-        type: str
-        description: "The language to use for transcription. Options: auto, en, es, fr, de, it, pt, zh, etc."
-      gain:
-        value: 1.0
-        type: float
-        description: "Amplification factor for the recorded audio. Values greater than 1.0 increase volume, less than 1.0 decrease it. Use cautiously as high values may cause clipping. Default is 1.0 (no change)"
-    transcription_backend_type:
-      value: faster_whisper
-      type: str
-      description: "The backend to use for transcription. Options: faster_whisper, openai, vosk"
-      options:
-        - faster_whisper
-        - openai
-        - vosk
-    transcription_backend:
-      type: dict
-      description: "The setup for the transcription backend."
-    llm_backend_type:
-      value: ollama
-      type: str
-      description: "The backend to use for LLM processing. Options: openai, ollama, perplexity, groq, none"
-      options:
-        - openai
-        - ollama
-        - perplexity
-        - groq
-        - none
-    llm_backend:
-      type: dict
-      description: "The setup for the LLM backend."
-    output_options:
-      output_mode:
-        value: text
-        type: str
-        description: "The mode to use for output. Options: text, voice"
-        options:
-          - text
-          - voice
-          - clipboard
-          - notification
-          - pop-up
-      is_streaming:
-        value: false
-        type: bool
-        description: Whether to stream the output.
-      save_output_to_clipboard:
-        value: true
-        type: bool
-        description: Save the final output to the clipboard
-      writing_key_press_delay:
-        value: 0.005
-        type: float
-        description: "The delay in seconds between each key press when writing the transcribed text. Too short of a delay can affect typing of shifted characters (e.g. capital letters, ?, !, etc.) in uinput mode."
-
-
-transcription_backends:
-  faster_whisper:
-    model:
-      value: base
-      type: str
-      description: "The model to use for transcription. The larger models provide better accuracy but are slower."
-      options:
-        - tiny
-        - tiny.en
-        - base
-        - base.en
-        - small
-        - small.en
-        - medium
-        - medium.en
-        - large
-        - large-v1
-        - large-v2
-        - large-v3
-    compute_type:
-      value: float16
-      type: str
-      description: "The compute type to use for the local Whisper model."
-      options:
-        - float32
-        - float16
-        - int8
-    device:
-      value: cuda
-      type: str
-      description: "The device to run the local Whisper model on. Use 'cuda' for NVIDIA GPUs, 'cpu' for CPU-only processing"
-      options:
-        - cuda
-        - cpu
-    condition_on_previous_text:
-      value: true
-      type: bool
-      description: "Set to true to use the previously transcribed text as a prompt for the next transcription request."
-    temperature:
-      value: 0.0
-      type: float
-      description: "Controls the randomness of the transcription output. Lower values make the output more focused and deterministic."
-    initial_prompt:
-      value: null
-      type: str
-      description: "A string used as an initial prompt to condition the transcription."
-  openai:
-    model:
-      value: whisper-1
-      type: str
-      description: "The model to use for transcription. Currently only 'whisper-1' is available."
-      options:
-        - whisper-1
-    base_url:
-      value: https://api.openai.com/v1
-      type: str
-      description: "The base URL for the API. Can be changed to use a local API endpoint."
-    api_key:
-      value: null
-      type: str
-      description: "Your API key for the OpenAI API. Required for API usage."
-    temperature:
-      value: 0.0
-      type: float
-      description: "Controls the randomness of the transcription output. Lower values make the output more focused and deterministic."
-    initial_prompt:
-      value: null
-      type: str
-      description: "A string used as an initial prompt to condition the transcription."
-  vosk:
-    model_path:
-      value: "./model"
-      type: dir_path
-      description: "Path to the folder containing the Vosk model files. Default is 'model' in the current directory."
-    sample_rate:
-      value: 16000
-      type: int
-      description: "Sample rate of the audio input. Vosk models are typically trained on 16kHz audio."
-      options:
-        - 8000
-        - 16000
-        - 22050
-        - 44100
-        - 48000
-    use_streaming:
-      value: false
-      type: bool
-      description: "If true, use streaming mode with partial results. If false, wait for complete audio before transcribing."
-
-
-llm_backends:
-  openai:
-    api_key:
-      value: null
-      type: str
-      description: "Your API key for the OpenAI API. Required for API usage."
-    model:
-      value: gpt-4o
-      type: str
-      description: "The model to use for LLM processing."
-      options:
-        - gpt-4o
-        - gpt-4o-mini
-        - o1-mini
-    temperature:
-      value: 0.0
-      type: float
-      description: "Controls the randomness of the LLM output. Lower values make the output more focused and deterministic."
-  ollama:
-    model:
-      value: llama3.2:latest
-      type: str
-      description: "The model to use for LLM processing."
-      options:
-        - llama3.2:latest
-        - smollm2
-        - llama2-uncensored
-    temperature:
-      value: 0.0
-      type: float
-      description: "Controls the randomness of the LLM output. Lower values make the output more focused and deterministic."
-    keep_alive:
-      value: 5m
-      type: str
-      description: "The duration that models stay loaded in memory. Examples: '20m', '24h'. Set to '-1' to keep models loaded indefinitely. I suggest to keep the LLM alive indefinitely only if you are using the same LLM across multiple apps."
-  perplexity:
-    model:
-      value: llama-3.1-sonar-small-128k-online
-      type: str
-      description: "Perplexity backend model"
-      options:
-        - llama-3.1-sonar-small-128k-online
-        - llama-3.1-sonar-large-128k-online
-        - llama-3.1-sonar-huge-128k-online
-    temperature:
-      value: 0.0
-      type: float
-      description: "Controls the randomness of the LLM output. Lower values make the output more focused and deterministic."
-  groq:
-    api_key:
-      value: null
-      type: str
-      description: "Your API key for the Groq API. Required for API usage."
-    model:
-      value: mixtral-8x7b-32768
-      type: str
-      description: "The model to use for LLM processing."
-      options:
-        - mixtral-8x7b-32768
-        - llama-3.1-8b-instant
-    temperature:
-      value: 0.0
-      type: float
-      description: "Controls the randomness of the LLM output. Lower values make the output more focused and deterministic."
-  none:
-    value: {}
-    type: dict
-    description: "No LLM processing will be performed."
-
-
 activation_backends:
   press_together:
     hotkey:
+      description: The hotkey to use for activation.
+      type: str
       value: ctrl+shift+alt+space
-      type: str
-      description: "The hotkey to use for activation."
   rapid_tap:
-    trigger_key:
-      value: CAPS_LOCK
-      type: str
-      description: "The key to use for rapid activation."
     secondary_key:
-      value: null
+      description: The key to use for secondary activation.
       type: str
-      description: "The key to use for secondary activation."
+      value: null
     trigger_delay:
-      value: 0.05
+      description: The delay in seconds between each key press when writing the transcribed
+        text. Too short of a delay can affect typing of shifted characters (e.g. capital
+        letters, ?, !, etc.) in uinput mode.
       type: float
-      description: "The delay in seconds between each key press when writing the transcribed text. Too short of a delay can affect typing of shifted characters (e.g. capital letters, ?, !, etc.) in uinput mode."
+      value: 0.05
+    trigger_key:
+      description: The key to use for rapid activation.
+      type: str
+      value: CAPS_LOCK
+apps:
+- activation_backend:
+    description: The setup for the activation method.
+    type: dict
+  activation_backend_type:
+    description: 'The activation method to use. Options: press_together, rapid_tap'
+    options:
+    - press_together
+    - rapid_tap
+    type: str
+    value: press_together
+  llm_backend:
+    description: The setup for the LLM backend.
+    type: dict
+  llm_backend_type:
+    description: 'The backend to use for LLM processing. Options: openai, ollama,
+      perplexity, groq, none'
+    options:
+    - openai
+    - ollama
+    - perplexity
+    - groq
+    - none
+    type: str
+    value: ollama
+  name:
+    description: The name of the app.
+    type: str
+    value: Default
+  output_options:
+    is_streaming:
+      description: Whether to stream the output.
+      type: bool
+      value: false
+    output_mode:
+      description: 'The mode to use for output. Options: text, voice'
+      options:
+      - text
+      - voice
+      - clipboard
+      - notification
+      - pop-up
+      type: str
+      value: text
+    save_output_to_clipboard:
+      description: Save the final output to the clipboard
+      type: bool
+      value: true
+    writing_key_press_delay:
+      description: The delay in seconds between each key press when writing the transcribed
+        text. Too short of a delay can affect typing of shifted characters (e.g. capital
+        letters, ?, !, etc.) in uinput mode.
+      type: float
+      value: 0.005
+  recording_options:
+    gain:
+      description: Amplification factor for the recorded audio. Values greater than
+        1.0 increase volume, less than 1.0 decrease it. Use cautiously as high values
+        may cause clipping. Default is 1.0 (no change)
+      type: float
+      value: 1.0
+    language:
+      description: 'The language to use for transcription. Options: auto, en, es,
+        fr, de, it, pt, zh, etc.'
+      type: str
+      value: auto
+    read_from_clipboard:
+      description: Whether to read the clipboard content for the user prompt.
+      type: bool
+      value: false
+    sound_device:
+      description: The numeric index of the sound device to use for recording. Run
+        `python list_audio_devices.py` to to find device numbers.
+      type: int or null
+      value: null
+  transcription_backend:
+    description: The setup for the transcription backend.
+    type: dict
+  transcription_backend_type:
+    description: 'The backend to use for transcription. Options: faster_whisper, openai,
+      vosk'
+    options:
+    - faster_whisper
+    - openai
+    - vosk
+    type: str
+    value: faster_whisper
+global_options:
+  active_apps:
+    description: The apps that are currently active.
+    type: list
+    value:
+    - Default
+  print_to_terminal:
+    description: Whether to print debug information to the terminal.
+    type: bool
+    value: true
+  save_debug_audio:
+    description: Whether to save audio files for debugging purposes.
+    type: bool
+    value: false
+  start_minimized:
+    description: Whether to start the application minimized.
+    type: bool
+    value: false
+  start_on_startup:
+    description: Whether to automatically start the application when system boots.
+    type: bool
+    value: false
+  status_update_mode:
+    description: The mode to use for status updates about Chirp. Window will show
+      a window with the status, Notification will show a desktop notification.
+    options:
+    - Window
+    - Notification
+    type: str
+    value: Window
+llm_backends:
+  groq:
+    api_key:
+      description: Your API key for the Groq API. Required for API usage.
+      type: str
+      value: null
+    model:
+      description: The model to use for LLM processing.
+      options:
+      - mixtral-8x7b-32768
+      - llama-3.1-8b-instant
+      type: str
+      value: mixtral-8x7b-32768
+    temperature:
+      description: Controls the randomness of the LLM output. Lower values make the
+        output more focused and deterministic.
+      type: float
+      value: 0.0
+  none:
+    description: No LLM processing will be performed.
+    type: dict
+    value: {}
+  ollama:
+    keep_alive:
+      description: 'The duration that models stay loaded in memory. Examples: ''20m'',
+        ''24h''. Set to ''-1'' to keep models loaded indefinitely. I suggest to keep
+        the LLM alive indefinitely only if you are using the same LLM across multiple
+        apps.'
+      type: str
+      value: 5m
+    model:
+      description: The model to use for LLM processing.
+      options:
+      - smollm2:latest
+      - llama2-uncensored:latest
+      - llama3.2:slack
+      - llama3.2:latest
+      type: str
+      value: llama3.2:latest
+    temperature:
+      description: Controls the randomness of the LLM output. Lower values make the
+        output more focused and deterministic.
+      type: float
+      value: 0.0
+  openai:
+    api_key:
+      description: Your API key for the OpenAI API. Required for API usage.
+      type: str
+      value: null
+    model:
+      description: The model to use for LLM processing.
+      options:
+      - gpt-4o
+      - gpt-4o-mini
+      - o1-mini
+      type: str
+      value: gpt-4o
+    temperature:
+      description: Controls the randomness of the LLM output. Lower values make the
+        output more focused and deterministic.
+      type: float
+      value: 0.0
+  perplexity:
+    model:
+      description: Perplexity backend model
+      options:
+      - llama-3.1-sonar-small-128k-online
+      - llama-3.1-sonar-large-128k-online
+      - llama-3.1-sonar-huge-128k-online
+      type: str
+      value: llama-3.1-sonar-small-128k-online
+    temperature:
+      description: Controls the randomness of the LLM output. Lower values make the
+        output more focused and deterministic.
+      type: float
+      value: 0.0
+transcription_backends:
+  faster_whisper:
+    compute_type:
+      description: The compute type to use for the local Whisper model.
+      options:
+      - float32
+      - float16
+      - int8
+      type: str
+      value: float16
+    condition_on_previous_text:
+      description: Set to true to use the previously transcribed text as a prompt
+        for the next transcription request.
+      type: bool
+      value: true
+    device:
+      description: The device to run the local Whisper model on. Use 'cuda' for NVIDIA
+        GPUs, 'cpu' for CPU-only processing
+      options:
+      - cuda
+      - cpu
+      type: str
+      value: cuda
+    initial_prompt:
+      description: A string used as an initial prompt to condition the transcription.
+      type: str
+      value: null
+    model:
+      description: The model to use for transcription. The larger models provide better
+        accuracy but are slower.
+      options:
+      - tiny
+      - tiny.en
+      - base
+      - base.en
+      - small
+      - small.en
+      - medium
+      - medium.en
+      - large
+      - large-v1
+      - large-v2
+      - large-v3
+      type: str
+      value: base
+    temperature:
+      description: Controls the randomness of the transcription output. Lower values
+        make the output more focused and deterministic.
+      type: float
+      value: 0.0
+  openai:
+    api_key:
+      description: Your API key for the OpenAI API. Required for API usage.
+      type: str
+      value: null
+    base_url:
+      description: The base URL for the API. Can be changed to use a local API endpoint.
+      type: str
+      value: https://api.openai.com/v1
+    initial_prompt:
+      description: A string used as an initial prompt to condition the transcription.
+      type: str
+      value: null
+    model:
+      description: The model to use for transcription. Currently only 'whisper-1'
+        is available.
+      options:
+      - whisper-1
+      type: str
+      value: whisper-1
+    temperature:
+      description: Controls the randomness of the transcription output. Lower values
+        make the output more focused and deterministic.
+      type: float
+      value: 0.0
+  vosk:
+    model_path:
+      description: Path to the folder containing the Vosk model files. Default is
+        'model' in the current directory.
+      type: dir_path
+      value: ./model
+    sample_rate:
+      description: Sample rate of the audio input. Vosk models are typically trained
+        on 16kHz audio.
+      options:
+      - 8000
+      - 16000
+      - 22050
+      - 44100
+      - 48000
+      type: int
+      value: 16000
+    use_streaming:
+      description: If true, use streaming mode with partial results. If false, wait
+        for complete audio before transcribing.
+      type: bool
+      value: false

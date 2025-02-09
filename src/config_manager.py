@@ -1,5 +1,6 @@
 import yaml
 import os
+import subprocess
 from typing import Any, Dict, List, Optional
 from event_bus import EventBus
 from rich import print as rprint
@@ -211,8 +212,10 @@ class ConfigManager:
     _event_bus: EventBus = None
 
     @classmethod
-    def initialize(cls, event_bus: EventBus):
+    def initialize(cls, event_bus: EventBus, verbose: bool = False):
         cls._event_bus = event_bus
+        cls._verbose = verbose
+        cls._update_ollama_models(verbose)
         cls._schema = ConfigLoader.load_yaml('config_schema.yaml')
         # Initialize with empty apps list
         cls._app_manager = AppManager({'apps': []}, cls._schema)
@@ -434,3 +437,38 @@ class ConfigManager:
         elif backend_type == 'activation':
             return cls._schema.get('activation_backends', {})
         return {}
+
+    @classmethod
+    def _update_ollama_models(cls, verbose: bool = False):
+        try:
+            # Run ollama models command and get output
+            output = subprocess.check_output(["ollama", "list"], text=True).splitlines()
+            
+            # Skip header line and parse model names
+            model_names = []
+            for line in output[1:]:  # Skip the header line
+                if line.strip():  # Skip empty lines
+                    # Split by whitespace and take first column (NAME)
+                    model_name = line.split()[0].strip()
+                    model_names.append(model_name)
+            
+            # Load the current schema
+            with open('config_schema.yaml', 'r') as file:
+                schema = yaml.safe_load(file)
+            
+            # Only update the Ollama model options
+            if 'llm_backends' in schema and 'ollama' in schema['llm_backends']:
+                if 'model' in schema['llm_backends']['ollama']:
+                    schema['llm_backends']['ollama']['model']['options'] = model_names
+            
+            # Save the updated schema
+            with open('config_schema.yaml', 'w') as file:
+                yaml.dump(schema, file, default_flow_style=False)
+            
+            if verbose:
+                rprint("[green]Ollama models updated successfully[/green]")
+            
+        except subprocess.CalledProcessError as e:
+            rprint("[red]Error running 'ollama models' command[/red]")
+        except Exception as e:
+            rprint(f"[red]Error updating Ollama models: {str(e)}[/red]")
