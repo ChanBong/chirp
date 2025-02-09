@@ -1,4 +1,4 @@
-from typing import Set, Dict, Type, Optional
+from typing import Set, Dict, Type, Optional, Union, Tuple
 import time
 from pynput import keyboard, mouse
 import platform
@@ -256,25 +256,41 @@ class PynputBackend():
 class KeyChord:
     """Represents either a combination of keys or a tap sequence."""
 
-    def __init__(self, keys: Set[KeyCode | frozenset[KeyCode]], is_tap_sequence: bool = False):
-        """Initialize the KeyChord."""
-        self.keys = keys
-        self.pressed_keys: Set[KeyCode] = set()
+    def __init__(self, 
+                 keys: Union[Set[Union[KeyCode, frozenset]], Tuple[KeyCode, KeyCode]], 
+                 is_tap_sequence: bool = False):
+        """
+        Initialize the KeyChord.
+
+        For tap sequences, supply keys as an ordered tuple: (primary, secondary).
+        For normal chords, keys can be a set.
+        """
         self.is_tap_sequence = is_tap_sequence
 
-        # For tap sequence
+        if self.is_tap_sequence:
+            if not isinstance(keys, (tuple, list)) or len(keys) != 2:
+                raise ValueError("For tap sequences, keys must be an ordered pair (primary, secondary)")
+            self.primary_key, self.secondary_key = keys
+        else:
+            self.keys = keys
+            self.pressed_keys: Set[KeyCode] = set()
+
+        # For tap sequence mode
         self.sequence_start_time: Optional[float] = None
-        self.TAP_SEQUENCE_TIMEOUT = 0.5  # 500ms window
+        self.TAP_SEQUENCE_TIMEOUT = 0.5
+        self.tap_state = 0  # 0 = waiting for primary, 1 = primary pressed waiting for secondary
+
 
     def update(self, key: KeyCode, event_type: InputEvent) -> bool:
         """
         Update the state of pressed keys and check if the chord is active.
 
-        For normal chords (is_tap_sequence == False), we want all keys pressed simultaneously.
-        For tap sequences (e.g., 'TAP:CAPS_LOCK>S'), we want them pressed in order, within TAP_SEQUENCE_TIMEOUT.
+        For normal chords (is_tap_sequence == False), we require all keys pressed simultaneously.
+        For tap sequences (e.g., 'TAP:CAPS_LOCK>S'), we require the primary key first, then the secondary
+        within TAP_SEQUENCE_TIMEOUT.
         """
-        # ----- Normal chord behavior -----
         if not self.is_tap_sequence:
+            # ----- Normal chord behavior -----
             if event_type == InputEvent.KEY_PRESS:
                 self.pressed_keys.add(key)
             elif event_type == InputEvent.KEY_RELEASE:
@@ -282,52 +298,54 @@ class KeyChord:
             return self.is_valid_chord()
 
         # ----- Tap sequence behavior -----
-        # Expect exactly 2 keys, e.g. {KeyCode.CAPS_LOCK, KeyCode.S}
-        if len(self.keys) != 2:
-            return False
-
-        # Unpack our two keys
-        first_key, second_key = list(self.keys)  # ordering them
-        # If you'd like to ensure 'first_key' is always Caps Lock, you could do a check here
-
+        # We'll use an explicit state machine:
+        # State 0: Waiting for primary key press.
+        # State 1: Primary key was pressed; waiting for secondary key within timeout.
         if event_type == InputEvent.KEY_PRESS:
-            if key == first_key:
-                # Start or restart the timer whenever first key is pressed
-                self.sequence_start_time = time.time()
-
-            elif key == second_key:
-                # If user presses the second key within the time limit, we have a match
-                if (self.sequence_start_time is not None and
-                    (time.time() - self.sequence_start_time) <= self.TAP_SEQUENCE_TIMEOUT):
-                    # Successful chord
-                    self.reset_sequence()
-                    return True
-                else:
-                    # Too late or no valid start time, reset
-                    self.reset_sequence()
-
+            if self.tap_state == 0:
+                if key == self.primary_key:
+                    # Primary key pressed: start waiting for secondary key.
+                    self.sequence_start_time = time.time()
+                    self.tap_state = 1
+                # If secondary is pressed in idle state, ignore it.
+            elif self.tap_state == 1:
+                if key == self.secondary_key:
+                    # Secondary key pressed while waiting.
+                    if (time.time() - self.sequence_start_time) <= self.TAP_SEQUENCE_TIMEOUT:
+                        self.reset_sequence()
+                        return True  # Successful tap sequence.
+                    else:
+                        # Timeout exceeded.
+                        self.reset_sequence()
+                elif key == self.primary_key:
+                    # If the primary is pressed again, restart the timer.
+                    self.sequence_start_time = time.time()
+                # You might also decide to ignore any other keys.
         elif event_type == InputEvent.KEY_RELEASE:
-            # If you want to invalidate the chord on first-key release (depending on your use case),
-            # you could do so here. For now, let's keep it simple and just rely on the timer.
-            #
-            # Also, if time is up by the time we release anything, reset.
-            if (self.sequence_start_time is not None and
-               (time.time() - self.sequence_start_time) > self.TAP_SEQUENCE_TIMEOUT):
-                self.reset_sequence()
+            # Optionally: If you want to cancel the sequence on primary key release,
+            # you could reset the state here. For this example, we'll leave it as is.
+            pass
+
+        # Check for timeout: if we're waiting for the secondary key too long, reset.
+        if self.tap_state == 1 and (time.time() - self.sequence_start_time) > self.TAP_SEQUENCE_TIMEOUT:
+            self.reset_sequence()
 
         return False
 
     def reset_sequence(self):
         """Reset the tap sequence state."""
         self.sequence_start_time = None
+        self.tap_state = 0
 
     def is_valid_chord(self) -> bool:
-        """Check if all keys in the chord are currently pressed."""
+        """
+        Check if all keys in the chord are currently pressed (for normal chords).
+
+        For tap sequences, activation is detected in update() so this always returns False.
+        """
         if self.is_tap_sequence:
-            # Tap sequences use update() to detect activation, not simultaneous press
             return False
 
-        # For normal chord usage (e.g. SHIFT+S, etc.)
         for key in self.keys:
             if isinstance(key, frozenset):
                 if not any(k in self.pressed_keys for k in key):
@@ -335,7 +353,6 @@ class KeyChord:
             elif key not in self.pressed_keys:
                 return False
         return True
-
 
 class InputManager:
     """Manages input backends and listens for specific key combinations."""
@@ -381,9 +398,18 @@ class InputManager:
     def stop(self):
         self.backend.stop()
 
-    def parse_key_combination(self, combination_string: str) -> Set[KeyCode | frozenset[KeyCode]]:
-        """Parse a string representation of key combination into a set of KeyCodes."""
-        keys = set()
+
+    def parse_key_combination(
+        self, combination_string: str
+    ) -> Union[Set[Union[KeyCode, frozenset[KeyCode]]], Tuple[KeyCode, KeyCode]]:
+        """
+        Parse a string representation of a key combination.
+        
+        For tap sequences (e.g., "TAP:CAPS_LOCK>S"), return an ordered tuple:
+        (primary_key, secondary_key)
+        
+        For normal chords (e.g., "CTRL+SHIFT+S"), return a set of KeyCodes or key groups.
+        """
         key_map = {
             'CTRL': frozenset({KeyCode.CTRL_LEFT, KeyCode.CTRL_RIGHT}),
             'SHIFT': frozenset({KeyCode.SHIFT_LEFT, KeyCode.SHIFT_RIGHT}),
@@ -391,31 +417,43 @@ class InputManager:
             'META': frozenset({KeyCode.META_LEFT, KeyCode.META_RIGHT}),
         }
         
-        # Check if this is a tap sequence (format: "TAP:CAPS_LOCK>S")
+        # ----- TAP SEQUENCE PARSING -----
+        # Check if this is a tap sequence in the format "TAP:PRIMARY>SECONDARY"
         if combination_string.upper().startswith('TAP:'):
-            sequence = combination_string[4:].upper().split('>')
-            if len(sequence) == 2:
-                for key in sequence:
-                    key = key.strip()
-                    try:
-                        keycode = KeyCode[key]
-                        keys.add(keycode)
-                    except KeyError:
-                        rprint(f"[red]Unknown key in tap sequence:[/red] {key}")
-                return keys
-
-        # Original chord parsing (e.g. "CTRL+SHIFT+S")
-        for key in combination_string.upper().split('+'):
-            key = key.strip()
-            if key in key_map:
-                keys.add(key_map[key])
+            sequence_str = combination_string[4:].strip()  # remove "TAP:" prefix
+            sequence_keys = [k.strip() for k in sequence_str.split('>')]
+            if len(sequence_keys) != 2:
+                rprint("[red]Invalid tap sequence format. Expected TAP:KEY1>KEY2[/red]")
+                return tuple()  # or raise an exception if that fits your error handling
+            
+            try:
+                primary = KeyCode[sequence_keys[0].upper()]
+            except KeyError:
+                rprint(f"[red]Unknown primary key in tap sequence:[/red] {sequence_keys[0]}")
+                return tuple()
+            try:
+                secondary = KeyCode[sequence_keys[1].upper()]
+            except KeyError:
+                rprint(f"[red]Unknown secondary key in tap sequence:[/red] {sequence_keys[1]}")
+                return tuple()
+            
+            # Return an ordered tuple so the state machine knows which is primary vs secondary.
+            return (primary, secondary)
+        
+        # ----- NORMAL CHORD PARSING -----
+        keys: Set[Union[KeyCode, frozenset[KeyCode]]] = set()
+        for key_str in combination_string.upper().split('+'):
+            key_str = key_str.strip()
+            if key_str in key_map:
+                keys.add(key_map[key_str])
             else:
                 try:
-                    keycode = KeyCode[key]
+                    keycode = KeyCode[key_str]
                     keys.add(keycode)
                 except KeyError:
-                    rprint(f"[red]Unknown key:[/red] {key}")
+                    rprint(f"[red]Unknown key:[/red] {key_str}")
         return keys
+
 
     def on_input_event(self, event):
         """Handle input events and trigger callbacks if the key chord becomes active."""
