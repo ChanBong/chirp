@@ -444,19 +444,22 @@ class ConfigManager:
             # Run ollama models command and get output
             output = subprocess.check_output(["ollama", "list"], text=True).splitlines()
             
-            # Skip header line and parse model names
+            default_model_names = ['llama3.2:3b', 'deepseek-r1:7b', 'mistral:7b', 'qwen:7b']
             model_names = []
             for line in output[1:]:  # Skip the header line
                 if line.strip():  # Skip empty lines
                     # Split by whitespace and take first column (NAME)
                     model_name = line.split()[0].strip()
                     model_names.append(model_name)
+
+            if len(model_names) == 0:
+                if verbose:
+                    rprint("[red]No Ollama models found. Adding default model...[/red]")
+                model_names = default_model_names
             
-            # Load the current schema
             with open('config_schema.yaml', 'r') as file:
                 schema = yaml.safe_load(file)
             
-            # Only update the Ollama model options
             if 'llm_backends' in schema and 'ollama' in schema['llm_backends']:
                 if 'model' in schema['llm_backends']['ollama']:
                     schema['llm_backends']['ollama']['model']['options'] = model_names
@@ -469,6 +472,6 @@ class ConfigManager:
                 rprint("[green]Ollama models updated successfully[/green]")
             
         except subprocess.CalledProcessError as e:
-            rprint("[red]Error running 'ollama models' command[/red]")
+            rprint("[red]Error running 'ollama list' command[/red]. Check your Ollama installation.")
         except Exception as e:
             rprint(f"[red]Error updating Ollama models: {str(e)}[/red]")
