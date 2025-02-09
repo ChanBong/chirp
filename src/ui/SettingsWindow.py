@@ -37,6 +37,8 @@ class SettingsWindow(QWidget):
 
         # App tabs
         apps = ConfigManager.get_apps()
+        ConfigManager.update_input_options()
+        ConfigManager.update_ollama_models()
         for app in apps:
             app_name = app['name']
             app_tab = self.create_app_tab(app_name)

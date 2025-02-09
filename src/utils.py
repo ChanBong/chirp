@@ -7,6 +7,8 @@ import base64
 import json
 import os
 import time
+import pyaudio
+import platform
 
 def read_clipboard(model_supports_images=False):
     """Read text or image from clipboard."""
@@ -276,3 +278,76 @@ def is_bad_transcription(transcription: str):
         
     return False, None
 
+def list_good_audio_input_devices():
+    """
+    List audio input devices that are likely good choices,
+    based on OS-specific host API filtering.
+    """
+    p = pyaudio.PyAudio()
+    devices_by_name = {}
+    current_os = platform.system()
+
+    for i in range(p.get_device_count()):
+        info = p.get_device_info_by_index(i)
+        # Only consider devices with at least one input channel.
+        if info.get('maxInputChannels', 0) < 1:
+            continue
+
+        # Retrieve the host API info.
+        host_api_index = info.get('hostApi')
+        host_api_info = p.get_host_api_info_by_index(host_api_index)
+        host_api_name = host_api_info.get('name', '').upper()
+
+        # OS-specific filtering based on the host API.
+        if current_os == 'Windows':
+            # For Windows, only use WASAPI devices.
+            if 'WASAPI' not in host_api_name:
+                continue
+        elif current_os == 'Darwin':  # macOS
+            # On macOS, only include Core Audio devices.
+            if 'CORE AUDIO' not in host_api_name:
+                continue
+        elif current_os == 'Linux':
+            # On Linux, include devices that use ALSA or PulseAudio.
+            if not ('ALSA' in host_api_name or 'PULSEAUDIO' in host_api_name):
+                continue
+        else:
+            # Unknown OS: Skip or implement additional filters as needed.
+            continue
+
+        # Further filter out devices that likely are not intended for input.
+        name = info.get('name', '').strip()
+        lower_name = name.lower()
+        if any(bad in lower_name for bad in ["stereo mix", "pc speaker", "output"]):
+            continue
+
+        # Group devices by their name (in case the same physical device shows up multiple times).
+        if name not in devices_by_name:
+            devices_by_name[name] = []
+        devices_by_name[name].append(info)
+
+    # Choose one representative device per group.
+    good_devices = []
+    for name, infos in devices_by_name.items():
+        best_info = max(infos, key=lambda x: x.get('defaultSampleRate', 0))
+        good_devices.append(best_info)
+
+    p.terminate()
+    return good_devices
+
+def extract_device_index(device_string: str) -> str | None:
+    """
+    Extracts and returns the leading digits (device index) from a string formatted as:
+      "<digits>: <device name>"
+    
+    Args:
+        device_string (str): The input string (e.g., "23: Some Device Name").
+        
+    Returns:
+        str | None: The digits at the beginning of the string, or None if no match is found.
+    """
+    pattern = r"^(\d+):"
+    match = re.match(pattern, device_string)
+    if match:
+        return match.group(1)
+    return None

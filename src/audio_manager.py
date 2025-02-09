@@ -14,6 +14,7 @@ from event_bus import EventBus
 from enums import RecordingMode, AudioManagerState
 from apps import App
 from console_manager import console
+from utils import extract_device_index
 
 RecordingContext = namedtuple('RecordingContext', ['app', 'session_id'])
 
@@ -233,7 +234,8 @@ class AudioManager:
             host_api = self.pyaudio.get_host_api_info_by_index(info['hostApi'])['name']
             return f"{info['name']} - {host_api}"
 
-        if device == '' or device is None:
+        device_choice = extract_device_index(device)
+        if device_choice is None:
             default_index = get_default_input_device_index()
             device_info = get_device_info(default_index)
             ConfigManager.log_print(f"[dim]Using default input device: {device_info} "
@@ -241,7 +243,7 @@ class AudioManager:
             return default_index
 
         try:
-            device_index = int(device)
+            device_index = int(device_choice)
             device_info = get_device_info(device_index)
             ConfigManager.log_print(f"[dim]Using specified input device:[/dim] {device_info} "
                                   f"[dim](index: {device_index})[/dim]")

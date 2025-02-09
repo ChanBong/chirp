@@ -4,7 +4,7 @@ import subprocess
 from typing import Any, Dict, List, Optional
 from event_bus import EventBus
 from rich import print as rprint
-
+from utils import list_good_audio_input_devices
 
 class ConfigValidator:
     @staticmethod
@@ -215,7 +215,8 @@ class ConfigManager:
     def initialize(cls, event_bus: EventBus, verbose: bool = False):
         cls._event_bus = event_bus
         cls._verbose = verbose
-        cls._update_ollama_models(verbose)
+        cls.update_ollama_models(verbose)
+        cls.update_input_options(verbose)
         cls._schema = ConfigLoader.load_yaml('config_schema.yaml')
         # Initialize with empty apps list
         cls._app_manager = AppManager({'apps': []}, cls._schema)
@@ -438,8 +439,7 @@ class ConfigManager:
             return cls._schema.get('activation_backends', {})
         return {}
 
-    @classmethod
-    def _update_ollama_models(cls, verbose: bool = False):
+    def update_ollama_models(verbose: bool = False):
         try:
             # Run ollama models command and get output
             output = subprocess.check_output(["ollama", "list"], text=True).splitlines()
@@ -475,3 +475,35 @@ class ConfigManager:
             rprint("[red]Error running 'ollama list' command[/red]. Check your Ollama installation.")
         except Exception as e:
             rprint(f"[red]Error updating Ollama models: {str(e)}[/red]")
+
+    def update_input_options(verbose: bool = False):
+        try:
+            input_options = []
+            input_devices = list_good_audio_input_devices()
+            if input_devices:
+                for dev in input_devices:
+                    input_options.append(f"{dev['index']}: {dev['name']}")
+
+            with open('config_schema.yaml', 'r') as file:
+                schema = yaml.safe_load(file)
+            
+            # Update the schema for recording_options.sound_device
+            if 'apps' in schema and len(schema['apps']) > 0:
+                recording_options = schema['apps'][0].get('recording_options', {})
+                if 'sound_device' in recording_options:
+                    recording_options['sound_device']['type'] = 'str'
+                    recording_options['sound_device']['options'] = input_options
+                    if 'value' not in recording_options['sound_device'] or recording_options['sound_device']['value'] not in input_options:
+                        # Set default to the first device (usually system default)
+                        recording_options['sound_device']['value'] = input_options[0] if input_options else None
+            
+            with open('config_schema.yaml', 'w') as file:
+                yaml.dump(schema, file, default_flow_style=False)
+            
+            if verbose:
+                rprint("[green]Input device options updated successfully[/green]")
+            
+        except Exception as e:
+            rprint(f"[red]Error updating input device options: {str(e)}[/red]")
+
+
