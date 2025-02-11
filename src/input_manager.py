@@ -223,22 +223,22 @@ class PynputBackend():
         pass
 
 
-    def simulate_key_event(self, key: str, event_type: InputEvent):
+    def simulate_key_event(self, key: str):
         """Simulate a key event."""
-        if event_type == InputEvent.KEY_PRESS:
+        print(f"Simulating key event: {key}")
+        try:
             if key == "CAPS_LOCK":
                 self.keyboard_controller.press(self.keyboard.Key.caps_lock)
-            elif key == "BACKSPACE":
-                self.keyboard_controller.press(self.keyboard.Key.backspace)
-            else:
-                self.keyboard_controller.press(self.keyboard.KeyCode.from_char(key))
-        else:
-            if key == "CAPS_LOCK":
                 self.keyboard_controller.release(self.keyboard.Key.caps_lock)
             elif key == "BACKSPACE":
+                self.keyboard_controller.press(self.keyboard.Key.backspace)
                 self.keyboard_controller.release(self.keyboard.Key.backspace)
             else:
+                self.keyboard_controller.press(self.keyboard.KeyCode.from_char(key))
                 self.keyboard_controller.release(self.keyboard.KeyCode.from_char(key))
+        except Exception as e:
+            print(f"Error simulating key event: {e}")
+
 
     def is_caps_lock_on(self) -> bool:
         """Check if Caps Lock is on."""
@@ -465,18 +465,20 @@ class InputManager:
 
             if is_valid_chord:
                 self.event_bus.emit("shortcut_triggered", app_name, "press")
-
-                if self.backend.is_caps_lock_on() and key_chord.is_tap_sequence:
+                if key_chord.is_tap_sequence:
                     # Toggle the primary key if it's Caps Lock and remove the secondary key that was typed
-                    self.backend.simulate_key_event("CAPS_LOCK", InputEvent.KEY_PRESS)
-                    self.backend.simulate_key_event("CAPS_LOCK", InputEvent.KEY_RELEASE)
-                    self.backend.simulate_key_event("BACKSPACE", InputEvent.KEY_PRESS)
-                    self.backend.simulate_key_event("BACKSPACE", InputEvent.KEY_RELEASE)
-                    #
+                    if self.backend.is_caps_lock_on():
+                        self.backend.simulate_key_event("CAPS_LOCK")
+                    self.backend.simulate_key_event("BACKSPACE")
 
             # For normal chord combos, we check if we just lost activation:
             elif was_active and not key_chord.is_valid_chord():
                 self.event_bus.emit("shortcut_triggered", app_name, "release")
+                if key_chord.is_tap_sequence:
+                    # Toggle the primary key if it's Caps Lock and remove the secondary key that was typed
+                    if self.backend.is_caps_lock_on():
+                        self.backend.simulate_key_event("CAPS_LOCK")
+                    self.backend.simulate_key_event("BACKSPACE")
             
     def update_shortcuts(self):
         self.load_shortcuts()
