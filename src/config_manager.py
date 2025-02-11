@@ -480,6 +480,17 @@ class ConfigManager:
         try:
             input_options = []
             input_devices = list_good_audio_input_devices()
+            default_device = None
+            for dev in input_devices:
+                if dev['is_default']:
+                    default_device = dev
+                    break
+            
+            if not default_device:
+                if verbose:
+                    rprint("[red]No default device found. Setting to the first device.[/red]")
+                default_device = input_devices[0]
+            
             if input_devices:
                 for dev in input_devices:
                     input_options.append(f"{dev['index']}: {dev['name']}")
@@ -494,8 +505,7 @@ class ConfigManager:
                     recording_options['sound_device']['type'] = 'str'
                     recording_options['sound_device']['options'] = input_options
                     if 'value' not in recording_options['sound_device'] or recording_options['sound_device']['value'] not in input_options:
-                        # Set default to the first device (usually system default)
-                        recording_options['sound_device']['value'] = input_options[0] if input_options else None
+                        recording_options['sound_device']['value'] = f"{default_device['index']}: {default_device['name']} - {default_device['host_api']}"
             
             with open('config_schema.yaml', 'w') as file:
                 yaml.dump(schema, file, default_flow_style=False)

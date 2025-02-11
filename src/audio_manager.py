@@ -14,7 +14,7 @@ from event_bus import EventBus
 from enums import RecordingMode, AudioManagerState
 from apps import App
 from console_manager import console
-from utils import extract_device_index
+from utils import extract_device_index_and_name
 
 RecordingContext = namedtuple('RecordingContext', ['app', 'session_id'])
 
@@ -231,11 +231,11 @@ class AudioManager:
 
         def get_device_info(index):
             info = self.pyaudio.get_device_info_by_index(index)
-            host_api = self.pyaudio.get_host_api_info_by_index(info['hostApi'])['name']
-            return f"{info['name']} - {host_api}"
+            return info
+        
+        device_choice = extract_device_index_and_name(device)
 
-        device_choice = extract_device_index(device)
-        if device_choice is None:
+        if device_choice.get('index') is None:
             default_index = get_default_input_device_index()
             device_info = get_device_info(default_index)
             ConfigManager.log_print(f"[dim]Using default input device: {device_info} "
@@ -243,11 +243,20 @@ class AudioManager:
             return default_index
 
         try:
-            device_index = int(device_choice)
+            device_index = device_choice.get('index', 0)
+            device_name = device_choice.get('name', 'Default')
             device_info = get_device_info(device_index)
-            ConfigManager.log_print(f"[dim]Using specified input device:[/dim] {device_info} "
+            if device_info.get('name') == device_name:
+                ConfigManager.log_print(f"[dim]Using specified input device:[/dim] {device_name} "
                                   f"[dim](index: {device_index})[/dim]")
-            return device_index
+                return device_index
+            else:
+                ConfigManager.log_print(f"[dim][red]Invalid device index:[/red] {device}. [yellow]Using default.[/yellow][/dim]")
+                default_index = get_default_input_device_index()
+                device_info = get_device_info(default_index)
+                ConfigManager.log_print(f"[dim]Selected default input device:[/dim] {device_info} "
+                                  f"[dim](index: {default_index})[/dim]")
+                return default_index
         except (ValueError, IOError):
             ConfigManager.log_print(f"[dim][red]Invalid device index:[/red] {device}. [yellow]Using default.[/yellow][/dim]")
             default_index = get_default_input_device_index()

@@ -293,29 +293,25 @@ def list_good_audio_input_devices():
         if info.get('maxInputChannels', 0) < 1:
             continue
 
-        # Retrieve the host API info.
         host_api_index = info.get('hostApi')
         host_api_info = p.get_host_api_info_by_index(host_api_index)
         host_api_name = host_api_info.get('name', '').upper()
 
-        # OS-specific filtering based on the host API.
-        if current_os == 'Windows':
-            # For Windows, only use WASAPI devices.
-            if 'WASAPI' not in host_api_name:
-                continue
-        elif current_os == 'Darwin':  # macOS
-            # On macOS, only include Core Audio devices.
-            if 'CORE AUDIO' not in host_api_name:
-                continue
-        elif current_os == 'Linux':
-            # On Linux, include devices that use ALSA or PulseAudio.
-            if not ('ALSA' in host_api_name or 'PULSEAUDIO' in host_api_name):
-                continue
-        else:
-            # Unknown OS: Skip or implement additional filters as needed.
-            continue
+        # if current_os == 'Windows':
+        #     # WASAPI devices.
+        #     if 'WASAPI' not in host_api_name:
+        #         continue
+        # elif current_os == 'Darwin':  # macOS
+        #     # Core Audio devices.
+        #     if 'CORE AUDIO' not in host_api_name:
+        #         continue
+        # elif current_os == 'Linux':
+        #     # ALSA or PulseAudio.
+        #     if not ('ALSA' in host_api_name or 'PULSEAUDIO' in host_api_name):
+        #         continue
+        # else:
+        #     continue
 
-        # Further filter out devices that likely are not intended for input.
         name = info.get('name', '').strip()
         lower_name = name.lower()
         if any(bad in lower_name for bad in ["stereo mix", "pc speaker", "output"]):
@@ -332,22 +328,44 @@ def list_good_audio_input_devices():
         best_info = max(infos, key=lambda x: x.get('defaultSampleRate', 0))
         good_devices.append(best_info)
 
+    # Add the default device to the list if it's not already there
+    default_device_index = p.get_default_input_device_info().get('index')
+    default_device_info = p.get_device_info_by_index(default_device_index)
+    if default_device_info not in good_devices:
+        good_devices.append(default_device_info)
+
+    # Mark the default device
+    for device in good_devices:
+        if device['index'] == default_device_index:
+            device['is_default'] = True
+        else:
+            device['is_default'] = False
+
     p.terminate()
     return good_devices
 
-def extract_device_index(device_string: str) -> str | None:
+def extract_device_index_and_name(device_string: str) -> tuple[str, str] | None:
+    """Extracts and returns the device name and host API from a string formatted as:
+      "<index>: <device name>"
     """
-    Extracts and returns the leading digits (device index) from a string formatted as:
-      "<digits>: <device name>"
-    
-    Args:
-        device_string (str): The input string (e.g., "23: Some Device Name").
-        
-    Returns:
-        str | None: The digits at the beginning of the string, or None if no match is found.
-    """
-    pattern = r"^(\d+):"
+    pattern = r"^(\d+): (.+)$"
     match = re.match(pattern, device_string)
+    
+    device_info = {
+        'index': None,
+        'name': None
+    }
+
     if match:
-        return match.group(1)
-    return None
+        try:
+            device_info['index'] = int(match.group(1))
+            device_info['name'] = match.group(2)
+        except ValueError:
+            device_info['index'] = None
+            device_info['name'] = None
+        except Exception as e:
+            print(f"Error extracting device index and name: {e}")
+            device_info['index'] = None
+            device_info['name'] = None
+
+    return device_info
