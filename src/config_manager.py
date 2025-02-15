@@ -505,7 +505,7 @@ class ConfigManager:
                     recording_options['sound_device']['type'] = 'str'
                     recording_options['sound_device']['options'] = input_options
                     if 'value' not in recording_options['sound_device'] or recording_options['sound_device']['value'] not in input_options:
-                        recording_options['sound_device']['value'] = f"{default_device['index']}: {default_device['name']} - {default_device['host_api']}"
+                        recording_options['sound_device']['value'] = f"{default_device['index']}: {default_device['name']} - {default_device['hostApi']}"
             
             with open('config_schema.yaml', 'w') as file:
                 yaml.dump(schema, file, default_flow_style=False)
