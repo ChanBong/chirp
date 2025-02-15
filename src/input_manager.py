@@ -52,7 +52,7 @@ class PynputBackend():
     def _translate_key_event(self, native_event) -> tuple[KeyCode, InputEvent]:
         """Translate a pynput event to our internal event representation."""
         pynput_key, is_press = native_event
-        key_code = self.key_map.get(pynput_key, KeyCode.SPACE)
+        key_code = self.key_map.get(pynput_key, KeyCode.F20)
         event_type = InputEvent.KEY_PRESS if is_press else InputEvent.KEY_RELEASE
         return key_code, event_type
 
@@ -225,7 +225,6 @@ class PynputBackend():
 
     def simulate_key_event(self, key: str):
         """Simulate a key event."""
-        print(f"Simulating key event: {key}")
         try:
             if key == "CAPS_LOCK":
                 self.keyboard_controller.press(self.keyboard.Key.caps_lock)
