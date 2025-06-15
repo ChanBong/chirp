@@ -38,7 +38,7 @@ fi
 
 cd "$repo_name" || exit
 
-echo "Running setup.py..."
-python setup.py
+echo "Running bootstrap.py..."
+python bootstrap.py
 
 echo "Installation completed successfully!"

@@ -294,6 +294,7 @@ def main() -> None:
     else:
         activate_script = os.path.join("chirp_env", "bin", "activate")
         print("[*] Activating virtual environment. A new shell will open.")
+        ## THIS DOES NOT WORK
         subprocess.run(["bash", "-c", f"source {activate_script} && exec $SHELL"])
 
     print("===== Setup Complete =====\n")

@@ -43,7 +43,7 @@ else {
 
 Set-Location $repoName
 
-Write-Host "Running setup.py..." -ForegroundColor Cyan
-python setup.py
+Write-Host "Running bootstrap.py..." -ForegroundColor Cyan
+python bootstrap.py
 
 Write-Host "Installation completed successfully!" -ForegroundColor Green
